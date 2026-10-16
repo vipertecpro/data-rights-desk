@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('ip_address', 45)->nullable();
             $table->string('user_agent', 512)->nullable();
             $table->timestamp('occurred_at', 6);
-            $table->timestamp('created_at')->nullable();
+            $table->timestamp('created_at', 6)->nullable(); // microseconds, like the model's date format (SQL Server's plain datetime refuses them)
 
             $table->index(['subject_type', 'subject_id', 'purpose', 'occurred_at'], 'drd_consents_subject_purpose_index');
         });
