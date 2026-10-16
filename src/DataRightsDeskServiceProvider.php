@@ -63,6 +63,7 @@ class DataRightsDeskServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'data-rights');
+        Blade::anonymousComponentPath(__DIR__.'/../resources/views/components', 'data-rights');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'data-rights');
 
         View::composer(['data-rights::layouts.public', 'data-rights::layouts.desk'], LayoutComposer::class);
