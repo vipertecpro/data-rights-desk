@@ -7,6 +7,7 @@ use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\DeliveryChannel;
 use Vipertecpro\DataRightsDesk\Models\Notice;
 use Vipertecpro\DataRightsDesk\Models\NoticeDelivery;
+use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 use Vipertecpro\DataRightsDesk\Notices\NoticeRepository;
 use Vipertecpro\DataRightsDesk\Notifications\NoticeNotification;
 use Vipertecpro\DataRightsDesk\Support\Languages;
@@ -64,6 +65,18 @@ class NotifyExistingCommand extends Command
 
         if ($delivered !== []) {
             $query->whereNotIn($model->getQualifiedKeyName(), $delivered);
+        }
+
+        // People whose data was erased are not contacted again.
+        $erased = SubjectProfile::query()
+            ->where('subject_type', $model->getMorphClass())
+            ->whereNotNull('erased_at')
+            ->pluck('subject_id')
+            ->map(fn (mixed $id): string => (string) $id)
+            ->all();
+
+        if ($erased !== []) {
+            $query->whereNotIn($model->getQualifiedKeyName(), $erased);
         }
 
         if ($pretend) {

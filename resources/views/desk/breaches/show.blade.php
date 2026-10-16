@@ -56,7 +56,7 @@
         @if ($affected > $notified)
             <form method="POST" action="{{ route('data-rights-desk.breaches.notify', $breach) }}" class="drd-inline">
                 @csrf
-                <button type="submit" class="drd-button">Tell {{ $affected - $notified }} people now</button>
+                <button type="submit" class="drd-button">Tell {{ $affected - $notified }} {{ \Illuminate\Support\Str::plural('person', $affected - $notified) }} now</button>
             </form>
         @endif
     </div>

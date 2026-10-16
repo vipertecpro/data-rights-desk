@@ -31,6 +31,7 @@ Route::post('requests/{request}/erase', [RequestController::class, 'erase'])->na
 Route::get('requests/{request}/summary', [RequestController::class, 'summary'])->name('requests.summary');
 
 Route::get('consents', [ConsentController::class, 'index'])->name('consents.index');
+Route::post('consents', [ConsentController::class, 'index'])->name('consents.lookup');
 Route::post('consents/proof', [ConsentController::class, 'proof'])->name('consents.proof');
 
 Route::get('notices', [NoticeController::class, 'index'])->name('notices.index');

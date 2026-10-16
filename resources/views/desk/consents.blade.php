@@ -21,7 +21,8 @@
         </tbody>
     </table>
 
-    <form method="GET" action="{{ route('data-rights-desk.consents.index') }}" class="drd-filters">
+    <form method="POST" action="{{ route('data-rights-desk.consents.lookup') }}" class="drd-filters">
+        @csrf
         <div class="drd-field">
             <label for="drd-lookup">Person's email</label>
             <input id="drd-lookup" type="search" name="email" value="{{ $email }}" maxlength="255" autocomplete="off">

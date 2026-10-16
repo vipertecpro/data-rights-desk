@@ -15,7 +15,8 @@ class ConsentController
 
     public function index(Request $http): View
     {
-        $email = $http->query('email');
+        // Looked up by POST so the email never lands in a URL, the access log or the browser history.
+        $email = $http->isMethod('post') ? $http->input('email') : null;
         $subject = is_string($email) && $email !== '' ? Subjects::findByEmail($email) : null;
 
         return view('data-rights::desk.consents', [

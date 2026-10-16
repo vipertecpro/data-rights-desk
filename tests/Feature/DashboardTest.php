@@ -34,6 +34,16 @@ it('publishes the notice from the dashboard', function () {
     $this->actingAs($this->admin)->post('/data-rights-desk/notices/publish')->assertSessionHas('data-rights.status', 'Nothing changed, so no new version was published.');
 });
 
+it('looks a person up by POST, so the email never appears in a URL', function () {
+    $this->publishNotice();
+    DataRights::give($this->person, 'marketing');
+
+    $this->actingAs($this->admin)->post('/data-rights-desk/consents', ['email' => 'person@example.com'])
+        ->assertOk()->assertSee('Download proof');
+    $this->actingAs($this->admin)->get('/data-rights-desk/consents?email=person@example.com')
+        ->assertOk()->assertDontSee('Download proof');
+});
+
 it('downloads consent proof and manages legal holds', function () {
     $this->publishNotice();
     DataRights::give($this->person, 'marketing');

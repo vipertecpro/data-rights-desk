@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Notification;
 use Vipertecpro\DataRightsDesk\Enums\DeliveryChannel;
 use Vipertecpro\DataRightsDesk\Models\Notice;
 use Vipertecpro\DataRightsDesk\Models\NoticeDelivery;
+use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 use Vipertecpro\DataRightsDesk\Notifications\NoticeNotification;
 
 beforeEach(function () {
@@ -53,4 +54,13 @@ it('s.5(2): notify-existing needs a published notice', function () {
     Notice::query()->delete();
 
     $this->artisan('data-rights:notify-existing')->assertExitCode(1);
+});
+
+it('s.5(2): notify-existing skips people whose data was erased', function () {
+    SubjectProfile::for($this->second)->forceFill(['erased_at' => now()])->save();
+
+    $this->artisan('data-rights:notify-existing')->expectsOutputToContain('to 1 people')->assertExitCode(0);
+
+    Notification::assertSentToTimes($this->first, NoticeNotification::class, 1);
+    Notification::assertNotSentTo($this->second, NoticeNotification::class);
 });

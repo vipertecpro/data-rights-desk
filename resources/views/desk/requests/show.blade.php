@@ -136,7 +136,7 @@
             @foreach ($request->events as $event)
                 <tr>
                     <td data-label="When">{{ $D::time($event->created_at) }}</td>
-                    <td data-label="Change">{{ $event->from_status ? $event->from_status->label().' to ' : '' }}{{ $event->to_status->label() }}</td>
+                    <td data-label="Change">@if ($event->from_status === $event->to_status)Note @else{{ $event->from_status ? $event->from_status->label().' to ' : '' }}{{ $event->to_status->label() }}@endif</td>
                     <td data-label="Note">{{ $event->note }}</td>
                 </tr>
             @endforeach
