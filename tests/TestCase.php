@@ -3,12 +3,10 @@
 namespace Vipertecpro\DataRightsDesk\Tests;
 
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Vipertecpro\DataRightsDesk\DataRightsDeskServiceProvider;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
@@ -71,21 +69,7 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
-        Schema::create('users', function (Blueprint $table): void {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('password')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
-        Schema::create('orders', function (Blueprint $table): void {
-            $table->id();
-            $table->string('status');
-            $table->timestamps();
-        });
-
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 

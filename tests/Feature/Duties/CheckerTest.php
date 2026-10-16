@@ -75,6 +75,9 @@ it('Checker: warnings for keep days, Hindi, Board URL, example purposes, uncover
 
     $report = DataRights::check();
 
+    // Back to testing, or the migration rollback at teardown asks for production confirmation on MySQL and PostgreSQL.
+    $this->app['env'] = 'testing';
+
     foreach ([
         'keep_days_below_minimum', 'hindi_not_offered', 'board_url_empty', 'example_purposes',
         'uncovered_personal_columns', 'consent_unchecked', 'default_gate', 'parental_verifier_missing',
