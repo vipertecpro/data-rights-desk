@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to this package are written here. It follows Semantic Versioning.
+
+## 1.0.0 - Unreleased
+
+First release. Needs PHP 8.3 or newer and Laravel 12 or 13.
+
+### Added
+
+- **Purposes** in `config/data-rights.php`, each with a title, a description, the goods or services, the itemised data, a basis (consent under section 6 or a legitimate use under section 7), a tracking flag, an optional Fourth Schedule key and an optional withdrawal effect. Text can be given per language.
+- **The notice** (section 5, Rule 3): built per language as standalone Markdown, with every published version kept and hashed. `php artisan data-rights:notice` publishes a new version only when the text changed or a language was added.
+- **The consent ledger** (section 6): append-only rows for every give and withdraw, tied to the notice version and hash the person saw. Consent recorded through a Consent Manager, a legacy import for older consents, and a proof file per person (`php artisan data-rights:proof`).
+- **Public pages**: the rights page, the notice (current and past versions), the consent choices, the person's requests, and nominations. A JSON API for apps with their own screens.
+- **Data rights requests** (sections 11 to 14): a summary of the person's data, correction, completion, updating, erasure and grievances. Each has a due date of at most 90 days, an identity check, a reply and a notification to the person (email by default). A completed access request can be downloaded as JSON, for 30 days by default.
+- **Nominations** (section 14), with the nominee's details encrypted.
+- **Breach register** (section 8(6), Rule 7): drafts of the alert to the Board, the 72-hour report and the message to each affected person. The package drafts and the business sends.
+- **Retention keeper** (Rule 8, Rule 6(1)(e)): a 365-day minimum, legal holds, the `HasRetention` trait for your own models, and an optional inactivity erasure with a 48-hour warning. `php artisan data-rights:retain` runs it, and `--pretend` counts only.
+- **Children and persons with disability** (section 9, Rules 10 to 12): an age answer, parent or lawful guardian consent through a `ParentalConsentVerifier` that the app provides, no tracking of children, and Fourth Schedule keys.
+- **A processor register** (section 8(2), Rule 6(1)(f)).
+- **A contact block** (Rule 9) on the rights page, in the notice and in every email.
+- **A dashboard** at `/data-rights-desk` with an overview, requests, consents, notices, breaches, retention, processors, children and the checker, plus read-only JSON. It is behind the `viewDataRightsDesk` gate.
+- **A checker**: `php artisan data-rights:check` reports errors and warnings and exits with code 1 on errors.
+- **Commands**: `data-rights:install`, `data-rights:notice`, `data-rights:notify-existing`, `data-rights:retain`, `data-rights:proof`, `data-rights:breach-draft`, `data-rights:check` and `data-rights:make-source`.
+- **In your code**: the `DataRights` facade, the `HasDataRights` trait, the `consent:{purpose}` and `data-rights.consent:{purpose}` middleware, the `data-rights.activity` middleware, the `@dataRightsAllows` and `@dataRightsTracking` Blade directives, and nine events from `ConsentGiven` to `GuardianConsentRecorded`.
+- **Languages**: English is ready, Hindi is written and set to `needs_review`, and the other 21 languages of the Eighth Schedule each have a `meta.php` file with the status `needed`.
+- **Privacy of the package itself**: free-text fields are stored encrypted, the IP address and the user agent of a consent are off by default, only the age answer is stored (never a birth date), no personal data goes to your logs, and the package makes no outbound HTTP calls.
+- **Documentation**: the README, `docs/rules.md` (each feature mapped to its section or rule, with a short quote and what is unverified) and `docs/translations.md` (how to add a language, and the Hindi strings that need review).
+- **Tests**: every duty has at least one test whose name starts with the section or rule it covers. Pint, PHPStan (level 6) and Pest run in `composer ci`, and the suite runs a second time with immutable dates.
+
+### Not in this release
+
+A Consent Manager client or webhook, the duties of a Significant Data Fiduciary, the rules on transfers outside India, a parent check provider (DigiLocker or any other), a Filament plugin, a NativePHP bridge, sending anything to the Board, and translations beyond English and Hindi.

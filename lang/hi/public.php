@@ -37,7 +37,7 @@ return [
         'time_body' => 'हम आपका अनुरोध मिलने के :days दिनों के भीतर जवाब देते हैं।',
         'board_heading' => 'डेटा संरक्षण बोर्ड (Data Protection Board of India) में शिकायत',
         'board_with_url' => 'यदि आपकी शिकायत पर हमारे जवाब से आप संतुष्ट नहीं हैं, तो आप :url पर डेटा संरक्षण बोर्ड (Data Protection Board of India) में शिकायत कर सकते हैं।',
-        'board_without_url' => 'यदि आपकी शिकायत पर हमारे जवाब से आप संतुष्ट नहीं हैं, तो आप बोर्ड द्वारा बताए गए तरीकों से डेटा संरक्षण बोर्ड (Data Protection Board of India) में शिकायत कर सकते हैं।',
+        'board_without_url' => 'यदि आपकी शिकायत पर हमारे जवाब से आप संतुष्ट नहीं हैं, तो आप डेटा संरक्षण बोर्ड (Data Protection Board of India) में, उसके बताए गए तरीकों से, शिकायत कर सकते हैं।',
         'contact_heading' => 'संपर्क',
         'links_heading' => 'और देखें',
         'notice_link' => 'गोपनीयता सूचना पढ़ें',
