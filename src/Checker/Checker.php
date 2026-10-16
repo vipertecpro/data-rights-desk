@@ -53,6 +53,7 @@ class Checker
         }
 
         $this->checkRequests();
+        $this->checkErasers();
         $this->checkRetention();
         $this->checkBreaches();
         $this->checkBoard();
@@ -134,6 +135,13 @@ class Checker
 
         if ($overdue > 0) {
             $this->error('requests_overdue', "Rule 14(3): {$overdue} open request(s) are past their due date.");
+        }
+    }
+
+    private function checkErasers(): void
+    {
+        if (Sources::erasers() === []) {
+            $this->error('no_eraser', 's.12(3), s.8(7): no Eraser is listed in data-rights.sources, so an erasure request cannot be carried out. Add one with php artisan data-rights:make-source.');
         }
     }
 

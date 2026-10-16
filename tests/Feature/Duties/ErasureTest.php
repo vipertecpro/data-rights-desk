@@ -8,6 +8,7 @@ use Vipertecpro\DataRightsDesk\Enums\RequestStatus;
 use Vipertecpro\DataRightsDesk\Enums\RequestType;
 use Vipertecpro\DataRightsDesk\Events\PersonalDataErased;
 use Vipertecpro\DataRightsDesk\Exceptions\IdentityNotVerified;
+use Vipertecpro\DataRightsDesk\Exceptions\InvalidRequest;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\Nomination;
 use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
@@ -93,4 +94,47 @@ it('s.12(3): deleting the user model marks the profile erased', function () {
     $this->user->delete();
 
     expect(SubjectProfile::query()->where('subject_id', $this->user->id)->value('erased_at'))->not->toBeNull();
+});
+
+it('s.12(3): an erasure request cannot be completed without erasing', function () {
+    $request = DataRights::requests()->open(RequestType::Erasure, $this->user, null, ['actor' => $this->user]);
+
+    expect(fn () => DataRights::requests()->complete($request, 'Done'))->toThrow(InvalidRequest::class);
+
+    $this->allowDashboard();
+    $this->actingAs($this->makeUser('admin@shop.example'))
+        ->post("/data-rights-desk/requests/{$request->id}/complete", ['response' => 'Done'])
+        ->assertRedirect("/data-rights-desk/requests/{$request->id}")
+        ->assertSessionHasErrors('request');
+
+    expect($request->fresh()->status)->toBe(RequestStatus::Received);
+});
+
+it('s.12(3): erasure refuses when no Eraser is configured, and the person is told nothing', function () {
+    config()->set('data-rights.sources', []);
+    $request = DataRights::requests()->open(RequestType::Erasure, $this->user, null, ['actor' => $this->user]);
+
+    expect(fn () => DataRights::requests()->erase($request))->toThrow(InvalidRequest::class, 'No Eraser is listed')
+        ->and($request->fresh()->status)->toBe(RequestStatus::Received)
+        ->and(SubjectProfile::lookup($this->user)->erased_at)->toBeNull()
+        ->and(DataRights::check()->hasError('no_eraser'))->toBeTrue();
+
+    Notification::assertNotSentTo($this->user, RequestClosedNotification::class);
+    Notification::assertSentOnDemandTimes(RequestClosedNotification::class, 0);
+});
+
+it('s.12(3): erasure cancels the person\'s other open requests with a note', function () {
+    $this->travelTo(now()->subDays(100));
+    $grievance = DataRights::requests()->open(RequestType::Grievance, $this->user, 'Too many emails');
+    $this->travelBack();
+    $request = DataRights::requests()->open(RequestType::Erasure, $this->user, null, ['actor' => $this->user]);
+
+    expect(DataRights::check()->hasError('requests_overdue'))->toBeTrue();
+
+    DataRights::requests()->erase($request);
+
+    expect($grievance->fresh()->status)->toBe(RequestStatus::Cancelled)
+        ->and($grievance->events()->get()->last()->note)->toBe("Cancelled because the person's data was erased.")
+        ->and($request->fresh()->status)->toBe(RequestStatus::Completed)
+        ->and(DataRights::check()->hasError('requests_overdue'))->toBeFalse();
 });

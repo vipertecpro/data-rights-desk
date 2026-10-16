@@ -47,10 +47,11 @@ it('Checker: errors for missing contact, missing or stale notice, needed locale,
     DataRights::requests()->open(RequestType::Grievance, $this->makeUser(), null);
     DataRights::breaches()->record(['nature' => 'Lost laptop']);
     $this->travelTo(Carbon::parse('2027-09-15 10:00:00'));
+    config()->set('data-rights.sources', []);
 
     $report = DataRights::check();
 
-    foreach (['contact_missing', 'notice_stale', 'response_days_over_90', 'requests_overdue', 'breach_report_overdue'] as $code) {
+    foreach (['contact_missing', 'notice_stale', 'response_days_over_90', 'requests_overdue', 'breach_report_overdue', 'no_eraser'] as $code) {
         expect($report->hasError($code))->toBeTrue($code);
     }
 

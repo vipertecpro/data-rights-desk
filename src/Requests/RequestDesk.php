@@ -83,11 +83,7 @@ class RequestDesk
 
         if ($subject !== null) {
             // Rule 8(1): exercising a right counts as approaching the Data Fiduciary.
-            SubjectProfile::for($subject)->forceFill([
-                'last_seen_at' => now(),
-                'erasure_warned_at' => null,
-                'erasure_due_at' => null,
-            ])->save();
+            SubjectProfile::markActive($subject);
 
             $method = app(IdentityVerifier::class)->verify($request, $actor);
 
@@ -140,6 +136,10 @@ class RequestDesk
 
     public function complete(DataRightsRequest $request, string $response, ?Model $actor = null): DataRightsRequest
     {
+        if ($request->type === RequestType::Erasure) {
+            throw InvalidRequest::erasureNeedsErase((string) $request->getKey());
+        }
+
         if ($request->type !== RequestType::Grievance && ! $request->identityVerified()) {
             throw IdentityNotVerified::forRequest((string) $request->getKey());
         }
@@ -272,9 +272,13 @@ class RequestDesk
             throw InvalidRequest::withoutSubject($id);
         }
 
+        if (Sources::erasers() === []) {
+            throw InvalidRequest::noErasers();
+        }
+
         $email = Subjects::email($subject);
         $locale = $this->notificationLocale($request, $subject);
-        $report = $this->eraseSubject($subject, ErasureReason::Request);
+        $report = $this->eraseSubject($subject, ErasureReason::Request, $request);
 
         $request->forceFill(['result' => $report->toArray()])->save();
 
@@ -305,10 +309,17 @@ class RequestDesk
 
     /**
      * Runs every Eraser for one person. Shared by erasure requests and the
-     * retention keeper's inactivity step.
+     * retention keeper's inactivity step. Her other open requests are
+     * cancelled with a note, since there is nothing left to act on.
+     *
+     * @throws InvalidRequest when no Eraser is configured
      */
-    public function eraseSubject(Model $subject, ErasureReason $reason): ErasureReport
+    public function eraseSubject(Model $subject, ErasureReason $reason, ?DataRightsRequest $except = null): ErasureReport
     {
+        if (Sources::erasers() === []) {
+            throw InvalidRequest::noErasers();
+        }
+
         $context = new ErasureContext($reason, $subject, Limits::keepDays());
 
         if ($context->subjectIsHeld()) {
@@ -331,6 +342,13 @@ class RequestDesk
         ])->save();
 
         $report = new ErasureReport($reason, $outcomes, false, (int) $nominations);
+
+        DataRightsRequest::query()
+            ->forSubject($subject)
+            ->open()
+            ->when($except !== null, fn ($query) => $query->whereKeyNot($except?->getKey()))
+            ->get()
+            ->each(fn (DataRightsRequest $open) => $this->transition($open, RequestStatus::Cancelled, null, 'Cancelled because the person\'s data was erased.'));
 
         event(new PersonalDataErased($subject->getMorphClass(), $subject->getKey(), $report));
 

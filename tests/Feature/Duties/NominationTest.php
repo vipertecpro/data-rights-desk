@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\DB;
 use Vipertecpro\DataRightsDesk\Enums\ErasureReason;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\Nomination;
+use Vipertecpro\DataRightsDesk\Tests\Support\UsersSource;
 
 it('s.14: a person nominates and revokes, with nominee fields encrypted', function () {
     $person = $this->makeUser();
@@ -29,6 +30,7 @@ it('s.14: a person nominates and revokes, with nominee fields encrypted', functi
 });
 
 it('s.14: nominations are erased with the person', function () {
+    config()->set('data-rights.sources', [UsersSource::class]);
     $person = $this->makeUser();
     DataRights::nominations()->nominate($person, 'Meera Iyer', 'meera@example.com');
 
