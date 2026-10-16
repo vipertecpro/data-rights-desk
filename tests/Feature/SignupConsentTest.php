@@ -71,6 +71,14 @@ it('s.6(10): without a notice id the current notice is recorded', function () {
     expect($records[0]->notice_id)->toBe(DataRights::notices()->current('en')->getKey());
 });
 
+it('s.6(10): giveFromForm also takes the input array a Fortify CreateNewUser action receives', function () {
+    $person = $this->makeUser('person@example.com');
+
+    $records = DataRights::giveFromForm($person, ['name' => 'P', 'data_rights' => ['purposes' => ['account', 'marketing']]]);
+
+    expect(array_map(fn ($record) => $record->purpose, $records))->toBe(['account', 'marketing']);
+});
+
 it('s.6(1): IncludesPurpose stops a form that needs a purpose when the box is not ticked', function () {
     $rules = ['data_rights.purposes' => ['required', 'array', new IncludesPurpose('account')]];
 

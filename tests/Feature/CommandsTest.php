@@ -24,6 +24,9 @@ it('prints the next steps after install', function () {
     try {
         $this->artisan('data-rights:install')
             ->expectsOutputToContain('php artisan data-rights:notice')
+            ->expectsOutputToContain('Your app:')
+            ->expectsOutputToContain('Database: SQLite')
+            ->expectsOutputToContain('consent-fields')
             ->expectsOutputToContain('not legal advice')
             ->assertExitCode(0);
 

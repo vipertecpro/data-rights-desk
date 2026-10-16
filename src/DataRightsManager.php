@@ -51,14 +51,19 @@ class DataRightsManager
     /**
      * Record the purposes ticked in <x-data-rights::consent-fields> (or your own form that posts
      * data_rights[purposes][] and data_rights[notice]), against the notice version the form showed.
+     * Pass the request, or the input array a Fortify action such as CreateNewUser receives.
      *
+     * @param  Request|array<string, mixed>  $input
      * @return list<ConsentRecord>
      */
-    public function giveFromForm(Model $subject, Request $request, string $field = 'data_rights'): array
+    public function giveFromForm(Model $subject, Request|array $input, string $field = 'data_rights'): array
     {
-        $purposes = array_values(array_filter((array) $request->input($field.'.purposes', []), 'is_string'));
-        $notice = $request->input($field.'.notice');
-        $locale = $request->input($field.'.locale');
+        $request = $input instanceof Request ? $input : request();
+        $form = $input instanceof Request ? (array) $input->input($field, []) : (array) ($input[$field] ?? []);
+
+        $purposes = array_values(array_filter((array) ($form['purposes'] ?? []), 'is_string'));
+        $notice = $form['notice'] ?? null;
+        $locale = $form['locale'] ?? null;
 
         return $this->consents()->giveMany($subject, $purposes, array_filter([
             'channel' => ConsentChannel::Web,
