@@ -1,5 +1,7 @@
 # Data Rights Desk for Laravel
 
+![Latest version](https://img.shields.io/packagist/v/vipertecpro/data-rights-desk) ![Tests](https://img.shields.io/github/actions/workflow/status/vipertecpro/data-rights-desk/tests.yml?branch=main&label=tests) ![PHP](https://img.shields.io/packagist/dependency-v/vipertecpro/data-rights-desk/php) ![Laravel](https://img.shields.io/packagist/dependency-v/vipertecpro/data-rights-desk/laravel%2Fframework) ![Platforms](https://img.shields.io/badge/platforms-web-informational) ![Licence](https://img.shields.io/packagist/l/vipertecpro/data-rights-desk) ![Downloads](https://img.shields.io/packagist/dt/vipertecpro/data-rights-desk)
+
 Notices, consent records, data rights requests, retention, breach drafts and a dashboard that help a Laravel app meet India's Digital Personal Data Protection Act, 2023 and the DPDP Rules, 2025.
 
 I built Data Rights Desk and I maintain it. It is free and MIT licensed.
