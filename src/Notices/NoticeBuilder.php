@@ -127,12 +127,17 @@ class NoticeBuilder
         return $lines;
     }
 
+    /**
+     * Built from app.url rather than the current request, so the same config
+     * gives the same notice (and hash) from the console and from the web.
+     */
     private function link(string $route, string $locale): string
     {
         if (Route::has($route)) {
             $parameters = $locale === Languages::defaultLocale() ? [] : ['lang' => $locale];
+            $root = rtrim((string) config('app.url', ''), '/');
 
-            return '<'.route($route, $parameters).'>';
+            return '<'.$root.route($route, $parameters, false).'>';
         }
 
         $website = config('data-rights.business.website');

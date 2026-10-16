@@ -160,8 +160,10 @@ class ConsentLedger
                 return false;
             }
 
-            // s.9(1), Rules 10-11: verifiable consent of the parent or lawful guardian first.
-            if ($kind !== null) {
+            // s.9(1), Rules 10-11: verifiable consent of the parent or lawful guardian first,
+            // for purposes that rest on consent (s.6) or on data the person gave (s.7(a)).
+            // Legitimate uses under s.7(b)-(i) do not depend on anyone's consent.
+            if ($kind !== null && ($definition->needsConsent() || $definition->canBeObjectedTo())) {
                 if ($this->children->activeGuardianConsent($subject, $kind) === null) {
                     return false;
                 }
@@ -234,7 +236,7 @@ class ConsentLedger
             'guardian_consent_id' => $guardianConsent instanceof GuardianConsent ? $guardianConsent->getKey() : $guardianConsent,
             // Data minimisation: IP address and user agent only when the app turns them on.
             'ip_address' => config('data-rights.consent.record_ip') ? ($options['ip'] ?? null) : null,
-            'user_agent' => config('data-rights.consent.record_user_agent') ? mb_substr((string) ($options['user_agent'] ?? ''), 0, 512) ?: null : null,
+            'user_agent' => config('data-rights.consent.record_user_agent') ? (mb_substr((string) ($options['user_agent'] ?? ''), 0, 512) ?: null) : null,
             'occurred_at' => now(),
             ...$extra,
         ]);

@@ -138,3 +138,22 @@ it('Rule 12: a purpose with a Fourth Schedule key skips the checks for children'
         ->and(FourthSchedule::condition('A5'))->toStartWith('Processing is restricted to tracking the location of such children')
         ->and(FourthSchedule::keys())->toBe(['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6']);
 });
+
+it('s.9(1): legitimate uses under s.7(b) to (i) do not wait for a parent, but s.7(a) does', function () {
+    config()->set('data-rights.purposes.emergency', [
+        'title' => 'Medical emergency', 'description' => 'Helping in a medical emergency.', 'goods_or_services' => 'Emergency help',
+        'data' => ['Name'], 'basis' => 'legitimate_use', 'legitimate_use' => 'f',
+    ]);
+    config()->set('data-rights.purposes.delivery', [
+        'title' => 'Delivery', 'description' => 'Delivering orders.', 'goods_or_services' => 'Delivery',
+        'data' => ['Address'], 'basis' => 'legitimate_use', 'legitimate_use' => 'a',
+    ]);
+    DataRights::children()->recordAge($this->child, false);
+
+    expect(DataRights::allows($this->child, 'emergency'))->toBeTrue()
+        ->and(DataRights::allows($this->child, 'delivery'))->toBeFalse();
+
+    DataRights::children()->recordGuardianConsent($this->child, new GuardianVerification(GuardianKind::Parent, GuardianMethod::VirtualToken));
+
+    expect(DataRights::allows($this->child, 'delivery'))->toBeTrue();
+});

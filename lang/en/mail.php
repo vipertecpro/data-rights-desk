@@ -37,7 +37,7 @@ return [
     'erasure' => [
         'done' => 'We erased your personal data.',
         'retained' => 'We kept some records because a law needs them kept: :reasons',
-        'logs' => 'Logs of processing are kept for at least one year, as the DPDP Rules require, and then deleted.',
+        'logs' => 'Logs of processing are kept for at least one year, then deleted.',
     ],
 
     'breach' => [

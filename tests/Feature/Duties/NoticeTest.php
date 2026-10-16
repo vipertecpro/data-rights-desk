@@ -24,13 +24,14 @@ it('Rule 3: the notice gives the link to withdraw as easily as consent was given
     $built = DataRights::notices()->build('en');
 
     expect($built->body)->toContain('as easily as you gave it')
-        ->toContain('<'.route('data-rights.preferences').'>')
-        ->toContain('<'.route('data-rights.index').'>')
+        ->toContain('<https://shop.example/data-rights/preferences>')
+        ->toContain('<https://shop.example/data-rights>')
         ->toContain('complain to the Data Protection Board of India, using the means the Board publishes');
 
     config()->set('data-rights.board.url', 'https://board.example/complaints');
 
-    expect(DataRights::notices()->build('en')->body)->toContain('<https://board.example/complaints>');
+    expect(DataRights::notices()->build('en')->body)->toContain('<https://board.example/complaints>')
+        ->and(DataRights::notices()->build('hi')->body)->toContain('<https://shop.example/data-rights/preferences?lang=hi>');
 });
 
 it('Rule 3: the notice is standalone Markdown with the contact block, languages, version and date', function () {
