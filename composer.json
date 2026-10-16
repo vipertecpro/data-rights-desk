@@ -1,0 +1,76 @@
+{
+    "name": "vipertecpro/data-rights-desk",
+    "description": "Notices, consent records, data rights requests and breach reports for India's DPDP Act, in your Laravel app.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "dpdp",
+        "dpdp-act",
+        "dpdp-rules-2025",
+        "data-protection",
+        "consent-management",
+        "data-principal-rights",
+        "data-fiduciary",
+        "privacy",
+        "india"
+    ],
+    "authors": [
+        {
+            "name": "vipertecpro",
+            "homepage": "https://vipertecpro.com"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^12.0|^13.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.13",
+        "laravel/pint": "^1.25",
+        "orchestra/testbench": "^10.12|^11.3",
+        "pestphp/pest": "^4.7|^5.3",
+        "pestphp/pest-plugin-laravel": "^4.1|^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Vipertecpro\\DataRightsDesk\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Vipertecpro\\DataRightsDesk\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "format": "pint",
+        "ci": [
+            "pint --test",
+            "phpstan analyse --memory-limit=1G",
+            "pest"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Vipertecpro\\DataRightsDesk\\DataRightsDeskServiceProvider"
+            ],
+            "aliases": {
+                "DataRights": "Vipertecpro\\DataRightsDesk\\Facades\\DataRights"
+            }
+        },
+        "marketplace": {
+            "icon": "marketplace/icon.png"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
