@@ -14,6 +14,7 @@ use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Notifications\RequestReceivedNotification;
 use Vipertecpro\DataRightsDesk\Support\Morphs;
 use Vipertecpro\DataRightsDesk\Support\PackageRoutes;
+use Vipertecpro\DataRightsDesk\Tests\Support\NoMailRouteUser;
 use Vipertecpro\DataRightsDesk\Tests\Support\User;
 
 // How the package behaves inside an existing app: other packages, the app's own routes and settings.
@@ -132,16 +133,7 @@ it('Integration: the retention job and legal holds work in an app that enforces 
 
 it('Integration: emails go to the configured column when the model has no mail route', function () {
     Notification::fake();
-    $user = new class extends User
-    {
-        protected $table = 'users';
-
-        public function routeNotificationForMail(): ?string
-        {
-            return null; // as on a model whose email lives in another column
-        }
-    };
-    $user = $user->newQuery()->create(['name' => 'Phone first', 'email' => 'phone-first@example.com']);
+    $user = NoMailRouteUser::query()->create(['name' => 'Phone first', 'email' => 'phone-first@example.com']);
 
     DataRights::requests()->open(RequestType::Grievance, $user, null);
 

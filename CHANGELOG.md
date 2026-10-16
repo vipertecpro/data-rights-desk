@@ -2,6 +2,42 @@
 
 All notable changes to this package are written here. It follows Semantic Versioning.
 
+## 1.2.0 - unreleased
+
+### Added
+
+- **Erasure after a withdrawal** (section 8(7)(a)): a new `PurposeEraser` contract. List one in `sources`, and when a person withdraws consent for its purpose, it runs on the queue and the outcome goes into her processing log. `php artisan data-rights:make-source Newsletter --purpose=marketing` creates one. The new `PurposeDataErased` event carries the result.
+- **Processors to tell** (sections 6(6) and 8(7)(b)): `ConsentWithdrawn::processors()`, `PurposeDataErased` and the erasure report list the active processors that got data for the purposes. The dashboard shows them on an erasure request's page.
+- **The age question at sign-up** (section 9(1)): `<x-data-rights::consent-fields ask-age />`. `giveFromForm()` records the answer first, and a child's own ticks wait for a parent instead of being recorded as consent.
+- **The JSON feed**: the notice call returns the notice `id` and the purposes that need consent, for sign-up screens. A download call for the data summary works with tokens. The `docs/api.md` file lists every call with a real response.
+- **Settings**: `routes.public.auth` for people who sign in on another guard, and `morph_key_type` for UUID or ULID user ids (instead of changing Laravel's morph type for the whole app).
+- **Checker**: an app route that hides a package page or reuses a package route name, no route named `login`, `APP_URL` pointing at localhost, tables that common packages fill with personal data (such as `activity_log` and `telescope_entries`), name columns next to a `user_id`, and consent purposes with no PurposeEraser.
+- **Install command**: warns before the first migrate when the user model has UUID or ULID keys, when the users table has no email column, and when the app has no `login` route.
+- **CI**: `composer audit` on every run, and the GitHub Actions are pinned to commits.
+
+### Changed
+
+- A soft delete no longer marks the person as erased, because her data is still there. A force delete does.
+- `IncludesPurpose` now runs when nothing is ticked, so `required` is no longer needed with it. It refuses, when it is created, a purpose that is not in your config or that does not need consent.
+- The sign-up box refuses the same mistakes in `:purposes` and `:required`, shows its validation messages, and uses the notice's language for every line.
+- A posted notice id counts as proof only when that notice described the purpose. Otherwise the current notice is recorded.
+- A posted language that is not offered falls back to the default language instead of failing.
+- Consent changes are limited to 30 a minute for each person, on the pages and in the JSON feed.
+
+### Fixed
+
+- `data-rights:retain` failed in apps that call `Relation::enforceMorphMap()`.
+- Running `data-rights:install` a second time copied the migrations again, and `migrate` then failed.
+- Emails were dropped when the user model's own mail route was empty, as in apps whose email column is not `email`. They now go to `subject_email_column`.
+- The JSON request call answered 500 for a completed access request when the public pages were off.
+- An array in `routes.api.auth` broke route registration.
+
+### Upgrading from 1.0 or 1.1
+
+- Nothing is required. The new settings have defaults, and the migrations are unchanged.
+- If you soft-delete users, people soft-deleted before this release are still marked as erased. Clear the mark once, for example in `php artisan tinker`: `App\Models\User::onlyTrashed()->each(fn ($user) => Vipertecpro\DataRightsDesk\Models\SubjectProfile::clearErasure($user));`
+- If you installed 1.0 on SQL Server, recording consent failed there. Change the column with a migration of your own: `$table->timestamp('created_at', 6)->nullable()->change();` on `data_rights_consents`.
+
 ## 1.1.0 - 2026-10-17
 
 ### Added
