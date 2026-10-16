@@ -30,11 +30,13 @@ it('Checker: a clean setup passes and the command exits 0', function () {
 
     $report = DataRights::check();
 
+    // The shipped Hindi text waits for a fluent reader, so that is the one warning left.
     expect($report->errors())->toBe([])
-        ->and($report->warnings())->toBe([])
+        ->and(array_column($report->warnings(), 'code'))->toBe(['locale_needs_review'])
+        ->and($report->warnings()[0]['message'])->toContain('Have a fluent speaker review the Hindi text before you rely on it.')
         ->and($report->passed())->toBeTrue();
 
-    $this->artisan('data-rights:check')->expectsOutputToContain('0 error(s), 0 warning(s).')->assertExitCode(0);
+    $this->artisan('data-rights:check')->expectsOutputToContain('0 error(s), 1 warning(s).')->assertExitCode(0);
 });
 
 it('Checker: errors for missing contact, missing or stale notice, needed locale, response days, overdue requests and late breach reports', function () {

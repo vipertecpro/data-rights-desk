@@ -24,7 +24,7 @@ return [
     'withdraw_body' => 'You can withdraw your consent at any time, as easily as you gave it. Open :url and press "Withdraw consent" next to the purpose. Where we use data you gave us for a service without asking for consent, the button says "Stop this use".',
 
     'rights_heading' => 'Your rights',
-    'rights_body' => 'You can ask for a summary of your personal data, ask us to correct, complete, update or erase it, nominate someone to use these rights for you, and raise a grievance. Make a request at :url. We reply within :days days.',
+    'rights_body' => 'You can ask for a summary of your personal data, ask us to correct, complete, update or erase it, nominate someone to use these rights for you in the event of your death or incapacity, and raise a grievance. Make a request at :url. We reply within :days days.',
 
     'board_heading' => 'Complaints to the Data Protection Board of India',
     'board_with_url' => 'If you are not satisfied with our reply to your grievance, you can complain to the Data Protection Board of India at :url.',

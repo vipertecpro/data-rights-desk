@@ -57,7 +57,7 @@ As of 16 October 2026, when this file was written, no duty of an ordinary busine
 | Grievance redressal | s.8(10), s.13 | "establish an effective mechanism to redress the grievances of Data Principals" | Act No. 22 of 2023 | 13 May 2027 | `Rule 14(3):` | A grievance is a request type with its own clock. |
 | How to ask, and what identifies you | Rule 14(1) | "which may be required to identify her under its terms of service" | G.S.R. 846(E) | 13 May 2027 | `Rule 14(1):` | The public rights page shows how to ask and the identifier, without sign-in. Identity is checked by the signed-in session, or by a person who records the method on the dashboard. Erasure waits for that check. |
 | Reply within a set time | Rule 14(3) | "within a reasonable period not exceeding ninety days" | G.S.R. 846(E) | 13 May 2027 | `Rule 14(3):` | The package's own choice: 90 days is the ceiling for every request type. The Rules set 90 days for grievances only. See "Where the package chose". |
-| Nominate someone | s.14(1), Rule 14(4) | "nominate one or more individuals" | G.S.R. 846(E) | 13 May 2027 | `s.14:` | Nominee fields are encrypted. They are erased with the person. Removing a nomination marks it revoked, and the row is deleted when the person is erased. |
+| Nominate someone | s.14(1), Rule 14(4) | "in the event of death or incapacity of the Data Principal" | Act No. 22 of 2023; G.S.R. 846(E) | 13 May 2027 | `s.14:` | Nominee fields are encrypted. They are erased with the person. Removing a nomination deletes it. |
 
 ## 4. Processors, security and breaches
 

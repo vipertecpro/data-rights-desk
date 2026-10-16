@@ -103,6 +103,13 @@ class Checker
             }
         }
 
+        foreach (Languages::offered() as $locale) {
+            if (Languages::status($locale) === LanguageStatus::NeedsReview) {
+                $name = Languages::englishName($locale);
+                $this->warning('locale_needs_review', "s.5(3): the {$name} text ({$locale}) is marked needs_review. Have a fluent speaker review the {$name} text before you rely on it.");
+            }
+        }
+
         if (! in_array('hi', Languages::offered(), true)) {
             $this->warning('hindi_not_offered', 's.5(3): Hindi is not offered. People may ask for the notice in any Eighth Schedule language.');
         }

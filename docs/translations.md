@@ -18,7 +18,7 @@ Three things decide it:
 2. **The `locales` list** in `config/data-rights.php`. Only the codes listed there are offered. The default is `['en', 'hi']`.
 3. **The text of your purposes.** Every purpose needs a title, a description, a description of the goods or services, the list of data and (when set) the withdrawal effect in each offered language.
 
-`php artisan data-rights:notice` refuses to publish, and names what is missing, when a listed language has the status `needed` or when a purpose has no text in an offered language. `php artisan data-rights:check` reports a listed `needed` language as an error, and warns when Hindi is not offered.
+`php artisan data-rights:notice` refuses to publish, and names what is missing, when a listed language has the status `needed` or when a purpose has no text in an offered language. `php artisan data-rights:check` reports a listed `needed` language as an error, warns when Hindi is not offered, and warns while an offered language has the status `needs_review`.
 
 If you keep the default `locales` and write only English text for your own purposes, the notice command stops at the Hindi text. Either write the Hindi text for your purposes, or set `'locales' => ['en']`.
 
@@ -109,5 +109,6 @@ No fluent reader has checked it yet. Please check the points below. Each line na
 | 17 | the example purposes in `config/data-rights.php` | "उपयोग विश्लेषण (usage analytics)", "ईमेल से उत्पाद समाचार", "पासवर्ड (हैश के रूप में सहेजा गया)" | These are examples that every app replaces. Check they read naturally. |
 | 18 | `public.preferences.contact_heading` | "सवाल" for Questions | "प्रश्न" is more formal. |
 | 19 | loan words | "अपडेट", "साइन इन", "ईमेल", "फ़ोन", "डाउनलोड", "JSON" | Common English words are written in Devanagari where most readers use them. "अपडेट" could be "अद्यतन". |
+| 20 | `notice.rights_body` | "अपनी मृत्यु या अक्षमता की स्थिति में" for "in the event of your death or incapacity" | New words, added for section 14(1). Check that "अक्षमता" reads as the Act's "incapacity" (unable to act because of unsoundness of mind or infirmity of body), and match the Hindi text of section 14 if you can. |
 
 Once a fluent reader has checked the Hindi, change `status` in `lang/hi/meta.php` from `needs_review` to `ready`.

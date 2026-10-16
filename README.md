@@ -13,7 +13,7 @@ I built Data Rights Desk and I maintain it. It is free and MIT licensed.
 - **A consent ledger.** Append-only, one row for every give or withdraw, tied to the notice version the person saw. A proof file per person.
 - **Consent pages** with one click to give and one click to withdraw, and a JSON API if you build your own screens.
 - **Data rights requests**: a summary of the person's data, correction, completion, updating, erasure and grievances. Each has a clock, an identity check and a reply.
-- **Nominations**, so a person can name someone to use her rights.
+- **Nominations**, so a person can name someone to use her rights "in the event of death or incapacity" (section 14(1)).
 - **A retention keeper** with legal holds. Logs and records are kept for at least 365 days. Erasure after three years of inactivity, with a 48-hour warning, is there as a switch.
 - **A breach register** with drafts of the alert to the Board, the 72-hour report, and the message to each affected person.
 - **Children**: an age question, parent or guardian consent through a check that you provide, and no tracking of children.
@@ -168,8 +168,8 @@ php artisan data-rights:check
 
 It exits with code 1 when it finds an error, so you can run it in CI. `--json` prints the report as JSON.
 
-- **Errors**: no contact, no notice or an out-of-date one, a listed language that has no translation, `response_days` above 90, requests past their due date, a breach past its 72-hour report time with no report marked as sent.
-- **Warnings**: `keep_days` below 365, Hindi not offered, an empty Board URL, the example purposes unchanged, a table with personal columns that no source or retention model covers, a purpose that needs consent but that your code never checks, a processor with no contract reference or security clause, children checks on with no parent check bound, and the default gate in production.
+- **Errors**: no contact, no notice or an out-of-date one, a listed language that has no translation, `response_days` above 90, requests past their due date, a breach past its 72-hour report time with no report marked as sent, no Eraser in `sources`.
+- **Warnings**: `keep_days` below 365, Hindi not offered, an offered language still marked `needs_review` (the shipped Hindi is, until a fluent speaker has read it), an empty Board URL, the example purposes unchanged, a table with personal columns that no source or retention model covers, a purpose that needs consent but that your code never checks, a processor with no contract reference or security clause, children checks on with no parent check bound, and the default gate in production.
 
 The checker looks at what the package can see. It cannot tell whether your app meets the Act.
 
