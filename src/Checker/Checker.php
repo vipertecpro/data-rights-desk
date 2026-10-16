@@ -88,6 +88,7 @@ class Checker
             $this->checkExamplePurposes();
             $this->checkPersonalColumns();
             $this->checkConsentChecks($purposes);
+            $this->checkWithdrawalErasure($purposes);
         }
 
         return new CheckReport($this->errors, $this->warnings);
@@ -380,6 +381,16 @@ class Checker
 
             if (preg_match($call, $code) !== 1 && preg_match($middleware, $code) !== 1) {
                 $this->warning('consent_unchecked', "Purpose [{$key}] needs consent but the code never checks it (DataRights::allows, consentsTo, the consent:{$key} middleware or @dataRightsAllows).");
+            }
+        }
+    }
+
+    /** @param  array<string, Purpose>  $purposes */
+    private function checkWithdrawalErasure(array $purposes): void
+    {
+        foreach ($purposes as $key => $purpose) {
+            if ($purpose->needsConsent() && Sources::purposeErasersFor($key) === []) {
+                $this->warning('withdrawal_not_erased', "s.8(7)(a): no PurposeEraser covers purpose [{$key}], so withdrawing consent erases nothing. Add one that erases the data kept only for it (or returns ErasureOutcome::nothing() when there is none).");
             }
         }
     }

@@ -45,6 +45,10 @@ class {{ class }} implements Exporter, Eraser
         // and keep what another law needs with ErasureOutcome::retained($count, 'reason', $until).
         // When $context->keepsAccountAccess() is true (inactivity erasure), keep what the
         // person needs to sign in and any stored-value virtual token.
+        // For the users table, delete (or force-delete) the user row: the package then marks
+        // the person erased. A soft delete keeps the data, so it does not count as erasure.
+        // Outcomes: ErasureOutcome::erased($count), ::retained($count, $reason, $until),
+        // ::nothing(), and $outcome->and($other) to combine them.
         return ErasureOutcome::nothing();
     }
 }

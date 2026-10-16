@@ -5,6 +5,7 @@ namespace Vipertecpro\DataRightsDesk;
 use Closure;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
@@ -15,15 +16,18 @@ use Vipertecpro\DataRightsDesk\Children\ChildGuard;
 use Vipertecpro\DataRightsDesk\Consents\ConsentLedger;
 use Vipertecpro\DataRightsDesk\Contracts\IdentityVerifier;
 use Vipertecpro\DataRightsDesk\Contracts\ParentalConsentVerifier;
+use Vipertecpro\DataRightsDesk\Events\ConsentWithdrawn;
 use Vipertecpro\DataRightsDesk\Http\Controllers\AssetController;
 use Vipertecpro\DataRightsDesk\Http\Middleware\RecordActivity;
 use Vipertecpro\DataRightsDesk\Http\Middleware\RequireConsent;
+use Vipertecpro\DataRightsDesk\Jobs\EraseWithdrawnPurpose;
 use Vipertecpro\DataRightsDesk\Nominations\NominationBook;
 use Vipertecpro\DataRightsDesk\Notices\NoticeBuilder;
 use Vipertecpro\DataRightsDesk\Notices\NoticeRepository;
 use Vipertecpro\DataRightsDesk\Purposes\PurposeRegistry;
 use Vipertecpro\DataRightsDesk\Requests\RequestDesk;
 use Vipertecpro\DataRightsDesk\Retention\RetentionKeeper;
+use Vipertecpro\DataRightsDesk\Support\Sources;
 use Vipertecpro\DataRightsDesk\Verification\NoParentalConsentVerifier;
 use Vipertecpro\DataRightsDesk\Verification\SignedInSubjectVerifier;
 use Vipertecpro\DataRightsDesk\View\LayoutComposer;
@@ -74,6 +78,13 @@ class DataRightsDeskServiceProvider extends ServiceProvider
         $this->registerMiddleware();
         $this->registerBladeDirectives();
         $this->registerRoutes();
+
+        // s.8(7)(a): a withdrawal runs the app's PurposeEraser sources for that purpose, if it has any.
+        Event::listen(ConsentWithdrawn::class, function (ConsentWithdrawn $event): void {
+            if (Sources::purposeErasersFor($event->purpose) !== []) {
+                EraseWithdrawnPurpose::dispatch($event->subject, $event->purpose);
+            }
+        });
     }
 
     /** True while the viewDataRightsDesk gate is the package default (local only). */

@@ -5,12 +5,15 @@ namespace Vipertecpro\DataRightsDesk\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Vipertecpro\DataRightsDesk\Purposes\PurposeRegistry;
 
 class MakeSourceCommand extends Command
 {
-    protected $signature = 'data-rights:make-source {name : Class name, for example Orders}';
+    protected $signature = 'data-rights:make-source
+        {name : Class name, for example Orders}
+        {--purpose=* : Make a PurposeEraser for these purposes instead, for example --purpose=marketing}';
 
-    protected $description = 'Create an Exporter and Eraser class in app/DataRights';
+    protected $description = 'Create an Exporter and Eraser class (or, with --purpose, a PurposeEraser) in app/DataRights';
 
     public function handle(): int
     {
@@ -30,14 +33,24 @@ class MakeSourceCommand extends Command
             return self::FAILURE;
         }
 
-        $stub = File::get(__DIR__.'/../../stubs/source.stub');
+        $purposes = array_values(array_filter(array_map('strval', (array) $this->option('purpose'))));
+
+        foreach ($purposes as $purpose) {
+            if (! $this->laravel->make(PurposeRegistry::class)->has($purpose)) {
+                $this->error("Purpose [{$purpose}] is not in config/data-rights.php.");
+
+                return self::FAILURE;
+            }
+        }
+
+        $stub = File::get(__DIR__.'/../../stubs/'.($purposes === [] ? 'source.stub' : 'purpose-source.stub'));
 
         $namespace = rtrim($this->laravel->getNamespace(), '\\').'\\DataRights';
 
         File::ensureDirectoryExists(dirname($path));
         File::put($path, str_replace(
-            ['{{ namespace }}', '{{ class }}', '{{ name }}'],
-            [$namespace, $class, Str::headline($class)],
+            ['{{ namespace }}', '{{ class }}', '{{ name }}', '{{ purposes }}'],
+            [$namespace, $class, Str::headline($class), implode(', ', array_map(fn (string $p): string => var_export($p, true), $purposes))],
             $stub,
         ));
 

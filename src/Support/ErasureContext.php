@@ -18,6 +18,8 @@ final readonly class ErasureContext
         public ErasureReason $reason,
         private Model $subject,
         private int $keepDays,
+        /** The withdrawn purpose, for a PurposeEraser; null for a whole-person erasure. */
+        public ?string $purpose = null,
     ) {}
 
     public function subject(): Model

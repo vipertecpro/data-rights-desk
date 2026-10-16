@@ -76,6 +76,28 @@ class Processor extends Model
         return $query->where('active', true);
     }
 
+    /**
+     * s.6(6), s.8(7)(b): the active processors that got data for any of these purposes, which
+     * the business must tell to stop processing and erase it. Hidden ones are included: the
+     * s.11(2) exception only hides them from the person, not from the business.
+     *
+     * @param  list<string>  $purposes
+     * @return list<array{name: string, kind: string, purposes: list<string>, data_shared: list<string>}>
+     */
+    public static function toTell(array $purposes): array
+    {
+        return static::query()->active()->orderBy('name')->get()
+            ->filter(fn (self $processor): bool => array_intersect($processor->purposes, $purposes) !== [])
+            ->map(fn (self $processor): array => [
+                'name' => $processor->name,
+                'kind' => $processor->kind->value,
+                'purposes' => array_values(array_intersect($processor->purposes, $purposes)),
+                'data_shared' => $processor->data_shared,
+            ])
+            ->values()
+            ->all();
+    }
+
     /** Rule 6(1)(f): a contract with a security clause is expected for every active processor. */
     public function missingContractTerms(): bool
     {
