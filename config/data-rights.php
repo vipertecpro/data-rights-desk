@@ -182,6 +182,8 @@ return [
 
     'checker' => [
         'scan_paths' => null, // null = [app_path(), base_path('routes'), resource_path('views')]
+        // A name column alone (name, first_name, last_name, full_name) counts only on your users table or
+        // next to another column in this list, so products, tags and categories are not flagged.
         'personal_columns' => ['email', 'phone', 'mobile', 'name', 'first_name', 'last_name', 'full_name',
             'address', 'address_line_1', 'address_line_2', 'dob', 'date_of_birth', 'birth_date', 'ip_address',
             'user_agent', 'aadhaar', 'aadhaar_number', 'pan', 'pan_number', 'passport_number', 'latitude', 'longitude'],

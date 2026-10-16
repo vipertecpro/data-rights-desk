@@ -2,6 +2,7 @@
 
 namespace Vipertecpro\DataRightsDesk\Checker;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -28,6 +29,9 @@ use Vipertecpro\DataRightsDesk\Verification\NoParentalConsentVerifier;
  */
 class Checker
 {
+    /** Column names that are personal data only next to a stronger one, or on the users table. */
+    private const NAME_COLUMNS = ['name', 'first_name', 'last_name', 'full_name'];
+
     /** @var list<array{code: string, message: string}> */
     private array $errors = [];
 
@@ -232,6 +236,11 @@ class Checker
             }
         }
 
+        $subjectClass = config('data-rights.subject_model');
+        $subjectTable = is_string($subjectClass) && class_exists($subjectClass) && is_subclass_of($subjectClass, Model::class)
+            ? (new $subjectClass)->getTable()
+            : null;
+
         try {
             $tables = array_unique(array_column(Schema::getTables(), 'name'));
         } catch (Throwable) {
@@ -245,7 +254,9 @@ class Checker
 
             $columns = array_values(array_intersect(Schema::getColumnListing($table), $personal));
 
-            if ($columns === []) {
+            // A name alone is not personal data: products, tags and categories have names too. A name
+            // counts when the same table holds an email, phone, address, IP or similar, or on the users table.
+            if ($columns === [] || (array_diff($columns, self::NAME_COLUMNS) === [] && $table !== $subjectTable)) {
                 continue;
             }
 

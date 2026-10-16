@@ -1,11 +1,14 @@
 <?php
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Vipertecpro\DataRightsDesk\Contracts\ParentalConsentVerifier;
 use Vipertecpro\DataRightsDesk\Enums\RequestType;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\Notice;
 use Vipertecpro\DataRightsDesk\Tests\Support\AllowingParentVerifier;
+use Vipertecpro\DataRightsDesk\Tests\Support\NameOnlyPerson;
 use Vipertecpro\DataRightsDesk\Tests\Support\UsersSource;
 
 function cleanSetup(): void
@@ -96,4 +99,38 @@ it('Checker: invalid purposes are reported as an error', function () {
     config()->set('data-rights.purposes.Bad Key', ['title' => 'x']);
 
     expect(DataRights::check()->hasError('purposes_invalid'))->toBeTrue();
+});
+
+it('Checker: a name column alone is not personal data, except on the users table', function () {
+    $create = function (string $table, array $columns): void {
+        Schema::create($table, function (Blueprint $blueprint) use ($columns): void {
+            $blueprint->id();
+            foreach ($columns as $column) {
+                $blueprint->string($column)->nullable();
+            }
+        });
+    };
+
+    $create('drd_tags', ['name']);
+    $create('drd_contacts', ['name', 'phone']);
+    $create('drd_people', ['first_name', 'last_name']);
+
+    try {
+        config()->set('data-rights.subject_model', NameOnlyPerson::class);
+
+        $messages = implode(' ', array_column(array_filter(
+            DataRights::check()->warnings(),
+            fn ($warning) => $warning['code'] === 'uncovered_personal_columns',
+        ), 'message'));
+
+        expect($messages)
+            ->not->toContain('[drd_tags]')
+            ->toContain('[drd_contacts]')
+            ->toContain('[drd_people]');
+    } finally {
+        // MySQL commits DDL on its own, so drop the tables rather than rely on the test transaction.
+        Schema::dropIfExists('drd_tags');
+        Schema::dropIfExists('drd_contacts');
+        Schema::dropIfExists('drd_people');
+    }
 });
