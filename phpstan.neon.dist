@@ -1,0 +1,18 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - src
+        - config
+        - database
+        - routes
+    databaseMigrationsPath:
+        - database/migrations
+    configDirectories:
+        - %currentWorkingDirectory%/config
+    tmpDir: build/phpstan
+    ignoreErrors:
+        # The traits are used by the app's models, not inside the package.
+        - identifier: trait.unused
