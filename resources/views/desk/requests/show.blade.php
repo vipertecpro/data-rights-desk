@@ -72,7 +72,7 @@
                     <label for="drd-method">How you checked</label>
                     <input id="drd-method" type="text" name="method" required maxlength="120" placeholder="Reply from the registered email address">
                 </div>
-                <button type="submit" class="drd-button drd-button--primary">Record identity check</button>
+                <button type="submit" @class(['drd-button', 'drd-button--primary' => $request->type !== \Vipertecpro\DataRightsDesk\Enums\RequestType::Grievance])>Record identity check</button>
             </form>
         @endunless
 

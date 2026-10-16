@@ -17,13 +17,13 @@
             <nav aria-label="{{ __('data-rights::public.layout.nav_label') }}">
                 <ul class="drd-nav">
                     @foreach ([
-                        'data-rights.index' => __('data-rights::public.nav.rights'),
-                        'data-rights.notice' => __('data-rights::public.nav.notice'),
-                        'data-rights.preferences' => __('data-rights::public.nav.preferences'),
-                        'data-rights.requests.index' => __('data-rights::public.nav.requests'),
-                    ] as $routeName => $label)
+                        ['data-rights.index', 'data-rights.index', __('data-rights::public.nav.rights')],
+                        ['data-rights.notice', 'data-rights.notice*', __('data-rights::public.nav.notice')],
+                        ['data-rights.preferences', 'data-rights.preferences', __('data-rights::public.nav.preferences')],
+                        ['data-rights.requests.index', 'data-rights.requests.*', __('data-rights::public.nav.requests')],
+                    ] as [$routeName, $pattern, $label])
                         <li>
-                            <a href="{{ route($routeName, $lang ?? []) }}" @if (request()->routeIs($routeName, $routeName.'.*')) aria-current="page" @endif>{{ $label }}</a>
+                            <a href="{{ route($routeName, $lang ?? []) }}" @if (request()->routeIs($pattern)) aria-current="page" @endif>{{ $label }}</a>
                         </li>
                     @endforeach
                 </ul>
