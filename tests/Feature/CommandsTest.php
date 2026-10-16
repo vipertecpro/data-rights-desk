@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\File;
+use Vipertecpro\DataRightsDesk\Support\AppProfile;
 
 it('writes a source stub to app/DataRights and refuses to overwrite it', function () {
     $path = app_path('DataRights/Orders.php');
@@ -25,7 +26,7 @@ it('prints the next steps after install', function () {
         $this->artisan('data-rights:install')
             ->expectsOutputToContain('php artisan data-rights:notice')
             ->expectsOutputToContain('Your app:')
-            ->expectsOutputToContain('Database: SQLite')
+            ->expectsOutputToContain('Database: '.AppProfile::detect(base_path(), (string) config('database.connections.'.config('database.default').'.driver'))->databaseName())
             ->expectsOutputToContain('consent-fields')
             ->expectsOutputToContain('not legal advice')
             ->assertExitCode(0);
