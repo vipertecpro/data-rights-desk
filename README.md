@@ -243,12 +243,13 @@ Then record the ticked purposes when you create the user. The record names the n
 
 ```php
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
+use Vipertecpro\DataRightsDesk\Rules\AnswersAge;
 use Vipertecpro\DataRightsDesk\Rules\IncludesPurpose;
 
 Validator::make($input, [
     // your other rules
     'data_rights.purposes' => [new IncludesPurpose('account')],
-    'data_rights.age' => ['required', 'in:adult,child'], // only with ask-age
+    'data_rights.age' => [new AnswersAge], // only with ask-age
 ])->validate();
 
 $user = User::create([/* ... */]);
@@ -256,11 +257,11 @@ $user = User::create([/* ... */]);
 DataRights::giveFromForm($user, $input); // or pass the Request
 ```
 
-`IncludesPurpose` fails when the box is not ticked, including when nothing at all is ticked. Which purposes your sign-up needs is your decision. Leave out `:required` and the rule if none is needed.
+`IncludesPurpose` fails when the box is not ticked, including when nothing at all is ticked. `AnswersAge` fails until the age question is answered. Both show the package's own message, in the person's language. Which purposes your sign-up needs is your decision. Leave out `:required` and the rule if none is needed.
 
 `giveFromForm()` records the age answer first. For a person who says she is under 18, her own ticks are not recorded as consent: they wait for a parent. After sign-up, send her to `/data-rights/preferences` when `DataRights::children()->needsGuardianConsent($user)` is true. Purposes that are not in your config, or that do not need consent, are ignored.
 
-Your app's own registration test posts the form without the box, so add `'data_rights' => ['purposes' => ['account'], 'age' => 'adult']` to its data.
+`giveFromForm()` throws `NoticeMissing` when no notice is published, and `IncludesPurpose` then fails, so the account is not created without consent. Publish the notice before you open sign-ups. Your app's own registration test starts with an empty database and posts the form without the box: publish the notice first with `DataRights::notices()->publish()`, and add `'data_rights' => ['purposes' => ['account'], 'age' => 'adult']` to its data.
 
 With React, Vue, Svelte or a mobile app, `GET /data-rights/api/notice` gives the notice id and the purposes to show. Post the ticked keys as `data_rights[purposes][]`, the notice id as `data_rights[notice]` and its locale as `data_rights[locale]` with your own sign-up call, then call the same `giveFromForm()`.
 

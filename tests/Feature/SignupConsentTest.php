@@ -10,6 +10,7 @@ use Vipertecpro\DataRightsDesk\Exceptions\UnknownPurpose;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\ConsentRecord;
 use Vipertecpro\DataRightsDesk\Models\Notice;
+use Vipertecpro\DataRightsDesk\Rules\AnswersAge;
 use Vipertecpro\DataRightsDesk\Rules\IncludesPurpose;
 
 // A sign-up form asks for consent with the notice (s.5(1)), one unticked box per purpose (s.6(1)),
@@ -94,6 +95,26 @@ it('s.6(1): IncludesPurpose also fails when nothing is ticked, without a separat
 
     expect(Validator::make([], $rules)->fails())->toBeTrue()
         ->and(Validator::make(['data_rights' => ['purposes' => ['account']]], $rules)->passes())->toBeTrue();
+});
+
+it('s.5(1): IncludesPurpose fails while no notice is published, so no account is created without consent', function () {
+    Notice::query()->delete();
+
+    $validator = Validator::make(['data_rights' => ['purposes' => ['account']]], ['data_rights.purposes' => [new IncludesPurpose('account')]]);
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->first('data_rights.purposes'))->toContain('not published yet');
+});
+
+it('s.9(1): AnswersAge needs an adult or child answer, with the package\'s own message', function () {
+    $rules = ['data_rights.age' => [new AnswersAge]];
+
+    $missing = Validator::make([], $rules);
+
+    expect($missing->fails())->toBeTrue()
+        ->and($missing->errors()->first('data_rights.age'))->toBe('Please say whether you are 18 or older.')
+        ->and(Validator::make(['data_rights' => ['age' => 'maybe']], $rules)->fails())->toBeTrue()
+        ->and(Validator::make(['data_rights' => ['age' => 'child']], $rules)->passes())->toBeTrue();
 });
 
 it('s.6(1): IncludesPurpose refuses a purpose that is unknown or does not need consent', function () {

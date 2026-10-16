@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use InvalidArgumentException;
 use Vipertecpro\DataRightsDesk\Exceptions\UnknownPurpose;
+use Vipertecpro\DataRightsDesk\Notices\NoticeRepository;
 use Vipertecpro\DataRightsDesk\Purposes\PurposeRegistry;
 
 /**
@@ -31,6 +32,14 @@ final class IncludesPurpose implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
+        // s.5(1): without a published notice, consent cannot be recorded, so stop the form here
+        // rather than create an account that has no consent behind it.
+        if (app(NoticeRepository::class)->current() === null) {
+            $fail(__('data-rights::public.signup.no_notice'));
+
+            return;
+        }
+
         if (! is_array($value) || ! in_array($this->purpose, $value, true)) {
             $fail(__('data-rights::public.signup.required', ['purpose' => $this->purpose]));
         }

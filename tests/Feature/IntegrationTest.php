@@ -73,6 +73,10 @@ it('Integration: the checker reports a missing login route, unless guests are re
 
     expect(checkerCodes())->toContain('login_route_missing');
 
+    // What bootstrap/app.php sets up in every Laravel 11+ app.
+    Authenticate::redirectUsing(fn () => route('login'));
+    expect(checkerCodes())->toContain('login_route_missing');
+
     Authenticate::redirectUsing(fn () => '/admin/login');
 
     try {

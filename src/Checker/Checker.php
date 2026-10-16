@@ -2,13 +2,11 @@
 
 namespace Vipertecpro\DataRightsDesk\Checker;
 
-use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use ReflectionProperty;
 use Throwable;
 use Vipertecpro\DataRightsDesk\Concerns\HasRetention;
 use Vipertecpro\DataRightsDesk\DataRightsDeskServiceProvider;
@@ -21,6 +19,7 @@ use Vipertecpro\DataRightsDesk\Notices\NoticeRepository;
 use Vipertecpro\DataRightsDesk\Purposes\PurposeRegistry;
 use Vipertecpro\DataRightsDesk\Support\CheckReport;
 use Vipertecpro\DataRightsDesk\Support\Contact;
+use Vipertecpro\DataRightsDesk\Support\GuestRedirect;
 use Vipertecpro\DataRightsDesk\Support\Languages;
 use Vipertecpro\DataRightsDesk\Support\Limits;
 use Vipertecpro\DataRightsDesk\Support\PackageRoutes;
@@ -250,8 +249,9 @@ class Checker
     }
 
     /**
-     * The consent, request and dashboard pages need a signed-in person. Laravel sends a
-     * guest to the route named "login"; without one (and without redirectGuestsTo) the guest gets an error.
+     * The consent, request and dashboard pages need a signed-in person. Laravel sends a guest to
+     * the redirect set with redirectGuestsTo(), which is route('login') unless the app changed
+     * it. Ask that redirect where it goes: without a login route, the guest gets an error page.
      */
     private function checkGuestRedirect(): void
     {
@@ -259,18 +259,8 @@ class Checker
             return;
         }
 
-        if (Route::has('login')) {
-            return;
-        }
-
-        try {
-            $redirect = (new ReflectionProperty(Authenticate::class, 'redirectToCallback'))->getValue();
-        } catch (Throwable) {
-            return;
-        }
-
-        if ($redirect === null) {
-            $this->error('login_route_missing', 'Your app has no route named [login], so a guest who opens the consent, request or dashboard pages gets an error. Name your sign-in route login, or call $middleware->redirectGuestsTo(...) in bootstrap/app.php.');
+        if (GuestRedirect::isBroken()) {
+            $this->error('login_route_missing', 'A guest who opens the consent, request or dashboard pages is sent to a route that does not exist (Laravel uses the route named [login]). Name your sign-in route login, or call $middleware->redirectGuestsTo(...) in bootstrap/app.php.');
         }
     }
 

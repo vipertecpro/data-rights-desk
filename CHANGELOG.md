@@ -8,7 +8,7 @@ All notable changes to this package are written here. It follows Semantic Versio
 
 - **Erasure after a withdrawal** (section 8(7)(a)): a new `PurposeEraser` contract. List one in `sources`, and when a person withdraws consent for its purpose, it runs on the queue and the outcome goes into her processing log. `php artisan data-rights:make-source Newsletter --purpose=marketing` creates one. The new `PurposeDataErased` event carries the result.
 - **Processors to tell** (sections 6(6) and 8(7)(b)): `ConsentWithdrawn::processors()`, `PurposeDataErased` and the erasure report list the active processors that got data for the purposes. The dashboard shows them on an erasure request's page.
-- **The age question at sign-up** (section 9(1)): `<x-data-rights::consent-fields ask-age />`. `giveFromForm()` records the answer first, and a child's own ticks wait for a parent instead of being recorded as consent.
+- **The age question at sign-up** (section 9(1)): `<x-data-rights::consent-fields ask-age />` and the `AnswersAge` rule. `giveFromForm()` records the answer first, and a child's own ticks wait for a parent instead of being recorded as consent.
 - **The JSON feed**: the notice call returns the notice `id` and the purposes that need consent, for sign-up screens. A download call for the data summary works with tokens. The `docs/api.md` file lists every call with a real response.
 - **Settings**: `routes.public.auth` for people who sign in on another guard, and `morph_key_type` for UUID or ULID user ids (instead of changing Laravel's morph type for the whole app).
 - **Checker**: an app route that hides a package page or reuses a package route name, no route named `login`, `APP_URL` pointing at localhost, tables that common packages fill with personal data (such as `activity_log` and `telescope_entries`), name columns next to a `user_id`, and consent purposes with no PurposeEraser.
@@ -18,7 +18,7 @@ All notable changes to this package are written here. It follows Semantic Versio
 ### Changed
 
 - A soft delete no longer marks the person as erased, because her data is still there. A force delete does.
-- `IncludesPurpose` now runs when nothing is ticked, so `required` is no longer needed with it. It refuses, when it is created, a purpose that is not in your config or that does not need consent.
+- `IncludesPurpose` now runs when nothing is ticked, so `required` is no longer needed with it. It fails while no notice is published, so an account is not created without consent. It refuses, when it is created, a purpose that is not in your config or that does not need consent.
 - The sign-up box refuses the same mistakes in `:purposes` and `:required`, shows its validation messages, and uses the notice's language for every line.
 - A posted notice id counts as proof only when that notice described the purpose. Otherwise the current notice is recorded.
 - A posted language that is not offered falls back to the default language instead of failing.

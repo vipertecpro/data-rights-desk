@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 use Vipertecpro\DataRightsDesk\Support\AppProfile;
+use Vipertecpro\DataRightsDesk\Support\GuestRedirect;
 
 class InstallCommand extends Command
 {
@@ -102,7 +102,7 @@ class InstallCommand extends Command
             }
         }
 
-        if (! Route::has('login')) {
+        if (GuestRedirect::isBroken()) {
             $warnings[] = 'Your app has no route named login. Guests who open the consent or request pages would get an error: call $middleware->redirectGuestsTo(...) in bootstrap/app.php.';
         }
 

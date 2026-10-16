@@ -112,5 +112,6 @@ No fluent reader has checked it yet. Please check the points below. Each line na
 | 20 | `notice.rights_body` | "अपनी मृत्यु या अक्षमता की स्थिति में" for "in the event of your death or incapacity" | New words, added for section 14(1). Check that "अक्षमता" reads as the Act's "incapacity" (unable to act because of unsoundness of mind or infirmity of body), and match the Hindi text of section 14 if you can. |
 | 21 | `public.signup.*` | The sign-up consent box: "आपकी सहमति", "जिस भी उपयोग से आप सहमत हैं, उस पर निशान लगाएँ।", "गोपनीयता सूचना पढ़ें" | New in 1.1. This box sits inside a sign-up form, so it must be short and clear. Check "निशान लगाएँ" for "tick". |
 | 22 | `public.signup.required` | "आगे बढ़ने के लिए कृपया इस उपयोग के लिए सहमति दें।" | New in 1.1. The error shown when a required box is not ticked. |
+| 23 | `public.signup.age_required` | "कृपया बताएँ कि आपकी उम्र 18 वर्ष या उससे अधिक है या नहीं।" | New in 1.2. The error shown when the age question at sign-up is not answered. It should match the age question above it. |
 
 Once a fluent reader has checked the Hindi, change `status` in `lang/hi/meta.php` from `needs_review` to `ready`.
