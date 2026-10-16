@@ -23,7 +23,8 @@ it('s.14: a person nominates and revokes, with nominee fields encrypted', functi
     $this->actingAs($person)->get('/data-rights/requests')->assertSee('Meera Iyer');
     $this->actingAs($person)->delete("/data-rights/nominations/{$nomination->id}")->assertRedirect('/data-rights/requests');
 
-    expect($nomination->fresh()->revoked_at)->not->toBeNull()
+    expect($nomination->fresh())->toBeNull()
+        ->and(DB::table('data_rights_nominations')->count())->toBe(0)
         ->and(DataRights::nominations()->for($person))->toHaveCount(0);
 });
 

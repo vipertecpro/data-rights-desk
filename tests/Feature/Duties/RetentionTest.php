@@ -117,6 +117,7 @@ it('Rule 8(3): records of people erased more than keep_days ago and old closed r
         ->and(Nomination::query()->count())->toBe(0)
         ->and(DataRightsRequest::query()->count())->toBe(0)
         ->and(RequestEvent::query()->count())->toBe(0)
+        ->and(SubjectProfile::query()->whereMorphedTo('subject', $this->user)->exists())->toBeFalse()
         ->and($report->count('erased_people_records'))->toBeGreaterThan(0)
         ->and($report->count('closed_requests'))->toBe(1);
 });

@@ -352,13 +352,13 @@ The package does not copy your users' names or emails. It stores the type and id
 
 | Table | What it holds | Encrypted | Kept for |
 | --- | --- | --- | --- |
-| `data_rights_subjects` | Per person: the age answer (adult or under 18), whether she has a lawful guardian, when she was last seen, the erasure warning and the erased time | none | The keeper does not delete these rows, so the erased mark stays |
+| `data_rights_subjects` | Per person: the age answer (adult or under 18), whether she has a lawful guardian, when she was last seen, the erasure warning and the erased time | none | Deleted `keep_days` after the person is erased, with her other package records |
 | `data_rights_notices` | Every published version of the notice: the text, its hash, a snapshot of the purposes | none | Kept. It shows what a person saw |
 | `data_rights_notice_deliveries` | Which person was sent which notice version, by which channel, and when | none | Until `keep_days` after the person is erased |
 | `data_rights_consents` | The ledger: purpose, given or withdrawn, the notice version and hash, language, channel, who gave it, Consent Manager details, the time. The IP address and the user agent only if you turn them on | none | While the person exists. Rows are never changed. They are deleted `keep_days` after she is erased |
 | `data_rights_requests` | Type, status, dates, identity method, a result summary (counts, and the reasons your Erasers give) | `details`, `response` | Open requests stay. A closed request is deleted `keep_days` after it closed |
 | `data_rights_request_events` | The status changes of a request | `note` | With its request |
-| `data_rights_nominations` | The nominee's name, contact and relationship | all three | Deleted at once when erasure runs for the person (a request or inactivity). If the user model is deleted some other way, they go `keep_days` later. Removing a nomination only marks it revoked, and the row goes when she is erased |
+| `data_rights_nominations` | The nominee's name, contact and relationship | all three | Deleted at once when erasure runs for the person (a request or inactivity). If the user model is deleted some other way, they go `keep_days` later. Removing a nomination deletes it at once |
 | `data_rights_guardian_consents` | Which kind of guardian, which method, when, and which verifier class | `guardian_name`, `verification_reference` | Until `keep_days` after the person is erased |
 | `data_rights_processors` | Your register of processors and other fiduciaries: purposes, data shared, contract reference, security clause | none | Until you remove it. You can mark a processor inactive |
 | `data_rights_breaches` | The breach: title, description, dates, the Board alert and report times | `nature`, `extent`, `location`, `likely_impact`, `facts`, `mitigation`, `findings`, `remedial`, `consequences_for_people`, `safety_steps` | The package never deletes breaches |
@@ -402,7 +402,7 @@ Your own tables are not touched. The Exporters and Erasers that you write decide
 
 English is ready. Hindi is written and under review. The other 21 languages of the Eighth Schedule (Assamese, Bengali, Bodo, Dogri, Gujarati, Kannada, Kashmiri, Konkani, Maithili, Malayalam, Manipuri, Marathi, Nepali, Odia, Punjabi, Sanskrit, Santali, Sindhi, Tamil, Telugu and Urdu) need translation. Each has a `meta.php` file with the status `needed`. A language with that status cannot be offered.
 
-To add one, publish the language files with `php artisan vendor:publish --tag=data-rights-lang`. In `lang/vendor/data-rights/{code}/`, translate `notice.php`, `public.php` and `mail.php`, and set `status` in `meta.php`. Then add the code to `locales` in the config, add the language to your purposes, and run `php artisan data-rights:notice`. The `docs/translations.md` file in the package source has the steps and the list of Hindi strings that still need a fluent reader.
+To add one, publish the language files with `php artisan vendor:publish --tag=data-rights-lang`. In `lang/vendor/data-rights/{code}/`, translate `notice.php`, `public.php` and `mail.php`, and set `status` in `meta.php`. Then add the code to `locales` in the config, add the language to your purposes, and run `php artisan data-rights:notice`. The `docs/translations.md` file included in the package has the steps and the list of Hindi strings that still need a fluent reader.
 
 ## Testing
 
@@ -415,9 +415,9 @@ composer format    # Pint, laravel preset
 composer ci        # Pint check, PHPStan, Pest, and Pest again with immutable dates
 ```
 
-Every duty has at least one test, and the test name starts with the section or rule it covers, for example `Rule 7(2):` or `s.6(10):`. The `docs/rules.md` file in the package source maps each feature to its section or rule, with a short quote from the gazette text. It also marks what could not be verified.
+Every duty has at least one test, and the test name starts with the section or rule it covers, for example `Rule 7(2):` or `s.6(10):`. The `docs/rules.md` file included in the package maps each feature to its section or rule, with a short quote from the gazette text. It also marks what could not be verified.
 
-The repository has a GitHub Actions file for PHP 8.3, 8.4 and 8.5 with Laravel 12 and 13 on SQLite, MySQL 8 and PostgreSQL 16. It has not run yet, because the repository has no remote.
+The repository has a GitHub Actions file for PHP 8.3, 8.4 and 8.5 with Laravel 12 and 13 on SQLite, MySQL 8 and PostgreSQL 16.
 
 ## Not legal advice
 

@@ -86,7 +86,7 @@ it('Security: a person cannot see or change another person\'s request, download 
 
     $this->actingAs($owner)->get("/data-rights/requests/{$request->id}/download")->assertOk();
     $this->actingAs($owner)->get('/data-rights/requests/not-a-ulid')->assertNotFound();
-    expect($nomination->fresh()->revoked_at)->toBeNull();
+    expect($nomination->fresh())->not->toBeNull();
 });
 
 it('Security: request creation is throttled to six a minute', function () {

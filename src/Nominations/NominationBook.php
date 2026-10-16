@@ -23,13 +23,10 @@ class NominationBook
         ]);
     }
 
-    public function revoke(Nomination $nomination): Nomination
+    /** Removing a nomination deletes it, so the nominee's details are not kept (data minimisation). */
+    public function revoke(Nomination $nomination): void
     {
-        if ($nomination->revoked_at === null) {
-            $nomination->forceFill(['revoked_at' => now()])->save();
-        }
-
-        return $nomination;
+        $nomination->delete();
     }
 
     /** @return Collection<int, Nomination> */

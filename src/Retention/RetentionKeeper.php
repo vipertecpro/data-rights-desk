@@ -328,7 +328,7 @@ class RetentionKeeper
                     $count += $query->count();
                 }
 
-                $count += $requests->count();
+                $count += $requests->count() + 1;
 
                 continue;
             }
@@ -340,6 +340,9 @@ class RetentionKeeper
 
                 $count += $this->deleteRequests($requests);
             });
+
+            // The profile itself (age status, activity and erasure dates) goes last.
+            $count += (int) SubjectProfile::query()->whereKey($profile->getKey())->delete();
         }
 
         return $count;
