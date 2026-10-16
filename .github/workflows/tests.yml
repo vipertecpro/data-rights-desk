@@ -155,6 +155,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install the Microsoft ODBC driver for SQL Server
+        if: matrix.db == 'sqlsrv'
+        run: |
+          curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+          curl -sSL "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list" | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
+
       - name: Create the SQL Server test database
         if: matrix.db == 'sqlsrv'
         run: docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P Drd-Test-Passw0rd -Q "CREATE DATABASE testing"
