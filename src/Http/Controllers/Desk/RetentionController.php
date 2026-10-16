@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\DataRightsManager;
 use Vipertecpro\DataRightsDesk\Models\LegalHold;
 use Vipertecpro\DataRightsDesk\Models\RetentionRun;
+use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 use Vipertecpro\DataRightsDesk\Support\Limits;
 use Vipertecpro\DataRightsDesk\Support\Subjects;
 
@@ -54,6 +55,24 @@ class RetentionController
         );
 
         return redirect()->route('data-rights-desk.retention.index')->with('data-rights.status', 'Legal hold placed.');
+    }
+
+    /**
+     * Rule 8(2): the person "otherwise initiates contact" (a call, a letter, an
+     * email). Notes it as activity and clears a pending erasure warning.
+     */
+    public function recordContact(Request $http): RedirectResponse
+    {
+        $data = $http->validate(['email' => ['required', 'string', 'max:255']]);
+        $subject = Subjects::findByEmail((string) $data['email']);
+
+        if ($subject === null) {
+            return back()->withErrors(['contact_email' => 'No person with that email.']);
+        }
+
+        SubjectProfile::markActive($subject);
+
+        return redirect()->route('data-rights-desk.retention.index')->with('data-rights.status', 'Contact recorded. Any pending erasure warning for this person is cleared.');
     }
 
     public function releaseHold(LegalHold $hold): RedirectResponse

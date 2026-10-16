@@ -30,6 +30,51 @@
     </div>
     <p class="drd-small drd-muted">People who never answered count as {{ $unknownIsChild ? 'children' : 'adults' }} (children.unknown_age_is_child).</p>
 
+    <h2>Correct an age answer</h2>
+    <p class="drd-small">A person cannot change her answer once given. When she contacts you, find her here and change it with a note.</p>
+    <form method="POST" action="{{ route('data-rights-desk.children.lookup') }}" class="drd-filters">
+        @csrf
+        <div class="drd-field">
+            <label for="drd-age-lookup">Person's email</label>
+            <input id="drd-age-lookup" type="search" name="email" value="{{ $email }}" maxlength="255" autocomplete="off">
+        </div>
+        <button type="submit" @class(['drd-button', 'drd-button--primary' => ! $subject])>Find</button>
+    </form>
+
+    @if ($email !== '' && ! $subject)
+        <p class="drd-muted">No person with that email.</p>
+    @endif
+
+    @if ($subject)
+        <form method="POST" action="{{ route('data-rights-desk.children.age') }}" class="drd-card">
+            @csrf
+            <input type="hidden" name="email" value="{{ $email }}">
+            <h3>{{ \Vipertecpro\DataRightsDesk\Support\Subjects::label($subject) }}</h3>
+            <p>
+                Current answer:
+                @if ($profile?->age_status === null)
+                    not given.
+                @else
+                    {{ $profile->age_status === \Vipertecpro\DataRightsDesk\Enums\AgeStatus::Adult ? '18 or older' : 'under 18' }}.
+                @endif
+                @if ($profile?->age_changed_at)
+                    <span class="drd-help">Last changed by staff on {{ \Vipertecpro\DataRightsDesk\Support\Dates::time($profile->age_changed_at) }}: {{ $profile->age_note }}</span>
+                @endif
+            </p>
+            <fieldset class="drd-field">
+                <legend class="drd-label">New answer</legend>
+                <label class="drd-check"><input type="radio" name="is_adult" value="1" required> 18 or older</label>
+                <label class="drd-check"><input type="radio" name="is_adult" value="0" required> Under 18</label>
+            </fieldset>
+            <div class="drd-field">
+                <label for="drd-age-note">Why it changes (staff only)</label>
+                <textarea id="drd-age-note" name="note" required maxlength="2000"></textarea>
+                <span class="drd-help">Stored encrypted. Say how the person asked, not her contact details.</span>
+            </div>
+            <button type="submit" class="drd-button drd-button--primary">Change the answer</button>
+        </form>
+    @endif
+
     <h2>Guardian consents</h2>
     @if ($consents->isEmpty())
         <p class="drd-muted">None recorded.</p>
@@ -60,5 +105,5 @@
         @endforeach
     </dl>
 
-    <p><a class="drd-button drd-button--primary" href="{{ route('data-rights-desk.check') }}">Run the check</a></p>
+    <p><a class="drd-button" href="{{ route('data-rights-desk.check') }}">Run the check</a></p>
 @endsection

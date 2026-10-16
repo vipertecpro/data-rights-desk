@@ -7,6 +7,7 @@ use InvalidArgumentException;
 use Vipertecpro\DataRightsDesk\Contracts\ParentalConsentVerifier;
 use Vipertecpro\DataRightsDesk\Enums\AgeStatus;
 use Vipertecpro\DataRightsDesk\Enums\GuardianKind;
+use Vipertecpro\DataRightsDesk\Events\AgeAnswerChanged;
 use Vipertecpro\DataRightsDesk\Events\GuardianConsentRecorded;
 use Vipertecpro\DataRightsDesk\Models\GuardianConsent;
 use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
@@ -34,6 +35,29 @@ class ChildGuard
             'age_status' => $isAdult ? AgeStatus::Adult : AgeStatus::Child,
             'age_declared_at' => now(),
         ])->save();
+
+        return $profile;
+    }
+
+    /**
+     * Staff change a person's age answer, with a note saying why. The person's
+     * own answer is locked once given; this is the way to correct it.
+     */
+    public function changeAge(Model $subject, bool $isAdult, string $note, ?Model $by = null): SubjectProfile
+    {
+        $profile = SubjectProfile::for($subject);
+        $from = $profile->age_status;
+        $to = $isAdult ? AgeStatus::Adult : AgeStatus::Child;
+
+        $profile->forceFill([
+            'age_status' => $to,
+            'age_changed_at' => now(),
+            'age_changed_by_type' => $by?->getMorphClass(),
+            'age_changed_by_id' => $by?->getKey(),
+            'age_note' => $note,
+        ])->save();
+
+        event(new AgeAnswerChanged($subject, $from, $to, $by));
 
         return $profile;
     }

@@ -1,10 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Vipertecpro\DataRightsDesk\Contracts\ParentalConsentVerifier;
+use Vipertecpro\DataRightsDesk\Enums\AgeStatus;
 use Vipertecpro\DataRightsDesk\Enums\GivenBy;
 use Vipertecpro\DataRightsDesk\Enums\GuardianKind;
 use Vipertecpro\DataRightsDesk\Enums\GuardianMethod;
+use Vipertecpro\DataRightsDesk\Events\AgeAnswerChanged;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 use Vipertecpro\DataRightsDesk\Support\FourthSchedule;
@@ -156,4 +160,36 @@ it('s.9(1): legitimate uses under s.7(b) to (i) do not wait for a parent, but s.
     DataRights::children()->recordGuardianConsent($this->child, new GuardianVerification(GuardianKind::Parent, GuardianMethod::VirtualToken));
 
     expect(DataRights::allows($this->child, 'delivery'))->toBeTrue();
+});
+
+it('s.9(1): the age answer is locked once given, and staff change it with a note', function () {
+    Event::fake([AgeAnswerChanged::class]);
+
+    $this->actingAs($this->child)->post('/data-rights/age', ['is_adult' => '0'])->assertSessionHasNoErrors();
+    $this->actingAs($this->child)->post('/data-rights/age', ['is_adult' => '1'])
+        ->assertRedirect('/data-rights/preferences')
+        ->assertSessionHasErrors(['is_adult' => 'To change this, contact us.']);
+
+    expect(DataRights::children()->isChild($this->child))->toBeTrue();
+
+    $this->allowDashboard();
+    $admin = $this->makeUser('admin@shop.example');
+
+    $this->actingAs($admin)->post('/data-rights-desk/children', ['email' => 'child@example.com'])
+        ->assertOk()->assertSee('Current answer:')->assertSee('under 18');
+
+    $this->actingAs($admin)->post('/data-rights-desk/children/age', ['email' => 'child@example.com', 'is_adult' => '1', 'note' => 'Her parent emailed: she typed the wrong answer.'])
+        ->assertRedirect('/data-rights-desk/children')
+        ->assertSessionHas('data-rights.status');
+
+    $profile = SubjectProfile::lookup($this->child);
+    expect(DataRights::children()->isChild($this->child))->toBeFalse()
+        ->and($profile->age_note)->toBe('Her parent emailed: she typed the wrong answer.')
+        ->and($profile->age_changed_by_id)->toBe($admin->id)
+        ->and((string) DB::table('data_rights_subjects')->value('age_note'))->not->toContain('wrong answer');
+
+    Event::assertDispatched(AgeAnswerChanged::class, fn (AgeAnswerChanged $e) => $e->from === AgeStatus::Child && $e->to === AgeStatus::Adult);
+
+    $this->actingAs($admin)->post('/data-rights-desk/children/age', ['email' => 'nobody@example.com', 'is_adult' => '1', 'note' => 'x'])
+        ->assertSessionHasErrors('email');
 });

@@ -51,6 +51,7 @@ Route::get('breaches/{breach}/draft/{kind}', [BreachController::class, 'draft'])
 
 Route::get('retention', [RetentionController::class, 'index'])->name('retention.index');
 Route::post('retention/holds', [RetentionController::class, 'storeHold'])->name('retention.holds.store');
+Route::post('retention/contact', [RetentionController::class, 'recordContact'])->name('retention.contact');
 Route::post('retention/holds/{hold}/release', [RetentionController::class, 'releaseHold'])->name('retention.holds.release');
 
 Route::get('processors', [ProcessorController::class, 'index'])->name('processors.index');
@@ -60,6 +61,8 @@ Route::get('processors/{processor}/edit', [ProcessorController::class, 'edit'])-
 Route::put('processors/{processor}', [ProcessorController::class, 'update'])->name('processors.update');
 
 Route::get('children', ChildrenController::class)->name('children');
+Route::post('children', ChildrenController::class)->name('children.lookup');
+Route::post('children/age', [ChildrenController::class, 'changeAge'])->name('children.age');
 Route::get('check', CheckController::class)->name('check');
 
 Route::prefix('api')->name('api.')->group(function (): void {

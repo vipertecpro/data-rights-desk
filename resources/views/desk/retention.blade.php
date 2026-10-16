@@ -35,6 +35,17 @@
         <button type="submit" class="drd-button drd-button--primary">Place hold</button>
     </form>
 
+    <form method="POST" action="{{ route('data-rights-desk.retention.contact') }}" class="drd-card">
+        @csrf
+        <h2>Record contact from a person</h2>
+        <p class="drd-small">Rule 8(2): a person who calls, writes or emails you has approached you, just like signing in. Recording it clears a pending erasure warning.</p>
+        <div class="drd-field">
+            <label for="drd-contact-email">Person's email</label>
+            <input id="drd-contact-email" type="email" name="email" required maxlength="255" autocomplete="off">
+        </div>
+        <button type="submit" class="drd-button">Record contact</button>
+    </form>
+
     <h2>Legal holds</h2>
     @if ($holds->isEmpty())
         <p class="drd-muted">No legal holds.</p>

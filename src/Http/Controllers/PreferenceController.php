@@ -73,6 +73,12 @@ class PreferenceController
         $subject = $this->subject($request);
         $data = $request->validate(['is_adult' => ['required', 'in:0,1']]);
 
+        // The answer is locked once given; staff can change it on the dashboard.
+        if (SubjectProfile::lookup($subject)?->age_status !== null) {
+            return redirect()->route('data-rights.preferences', $this->langParameter($locale))
+                ->withErrors(['is_adult' => (string) __('data-rights::public.preferences.age_change')]);
+        }
+
         $this->dataRights->children()->recordAge($subject, $data['is_adult'] === '1' || $data['is_adult'] === 1);
 
         return redirect()->route('data-rights.preferences', $this->langParameter($locale))

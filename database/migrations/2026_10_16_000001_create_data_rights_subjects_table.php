@@ -13,6 +13,10 @@ return new class extends Migration
             $table->morphs('subject');
             $table->string('age_status', 16)->nullable();
             $table->timestamp('age_declared_at')->nullable();
+            // When staff changed the person's age answer, who did, and why (encrypted).
+            $table->timestamp('age_changed_at')->nullable();
+            $table->nullableMorphs('age_changed_by');
+            $table->text('age_note')->nullable();
             $table->boolean('has_lawful_guardian')->default(false);
             $table->timestamp('last_seen_at')->nullable();
             $table->timestamp('erasure_warned_at')->nullable();

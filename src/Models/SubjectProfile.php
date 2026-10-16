@@ -16,6 +16,10 @@ use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
  * @property int|string $subject_id
  * @property AgeStatus|null $age_status
  * @property CarbonInterface|null $age_declared_at
+ * @property CarbonInterface|null $age_changed_at
+ * @property string|null $age_changed_by_type
+ * @property int|string|null $age_changed_by_id
+ * @property string|null $age_note
  * @property bool $has_lawful_guardian
  * @property CarbonInterface|null $last_seen_at
  * @property CarbonInterface|null $erasure_warned_at
@@ -35,6 +39,10 @@ class SubjectProfile extends Model
         'subject_id',
         'age_status',
         'age_declared_at',
+        'age_changed_at',
+        'age_changed_by_type',
+        'age_changed_by_id',
+        'age_note',
         'has_lawful_guardian',
         'last_seen_at',
         'erasure_warned_at',
@@ -53,6 +61,8 @@ class SubjectProfile extends Model
         return [
             'age_status' => AgeStatus::class,
             'age_declared_at' => 'datetime',
+            'age_changed_at' => 'datetime',
+            'age_note' => 'encrypted',
             'has_lawful_guardian' => 'boolean',
             'last_seen_at' => 'datetime',
             'erasure_warned_at' => 'datetime',

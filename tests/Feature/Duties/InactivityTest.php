@@ -104,3 +104,27 @@ it('Rule 8(1): a legal hold keeps a quiet person from inactivity erasure', funct
 
     expect(DataRights::retention()->run()->count('inactivity_warned'))->toBe(0);
 });
+
+it('Rule 8(2): staff record contact from a person, which clears a pending warning', function () {
+    config()->set('data-rights.retention.inactivity.enabled', true);
+    $this->travelTo(Carbon::parse('2028-11-11 06:00:00'));
+    DataRights::retention()->run();
+    expect(SubjectProfile::lookup($this->user)->erasure_warned_at)->not->toBeNull();
+
+    $this->allowDashboard();
+    $admin = $this->makeUser('admin@shop.example');
+    $this->travelTo(Carbon::parse('2028-11-12 09:00:00'));
+
+    $this->actingAs($admin)->post('/data-rights-desk/retention/contact', ['email' => 'quiet@example.com'])
+        ->assertRedirect('/data-rights-desk/retention')
+        ->assertSessionHas('data-rights.status');
+
+    $profile = SubjectProfile::lookup($this->user);
+    expect($profile->erasure_warned_at)->toBeNull()
+        ->and($profile->last_seen_at->toDateTimeString())->toBe('2028-11-12 09:00:00');
+
+    $this->travelTo(Carbon::parse('2028-11-14 09:00:00'));
+    expect(DataRights::retention()->run()->count('inactivity_erased'))->toBe(0);
+
+    $this->actingAs($admin)->post('/data-rights-desk/retention/contact', ['email' => 'nobody@example.com'])->assertSessionHasErrors('contact_email');
+});
