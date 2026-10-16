@@ -4,7 +4,7 @@ Notices, consent records, data rights requests, retention, breach drafts and a d
 
 I built Data Rights Desk and I maintain it. It is free and MIT licensed.
 
-**Dates.** The duties of a business (a Data Fiduciary) under the Act and the Rules start on 13 May 2027 (G.S.R. 843(E)). Some sources give the 14th, because they date the gazette a day later. Plan for the 13th. Consent Manager registration starts on 13 Nov 2026. Before 13 May 2027, nothing is in force for a normal business app.
+**Dates.** The duties of a business (a Data Fiduciary) under the Rules start on 13 May 2027: Rule 1(4) of the DPDP Rules, 2025 (G.S.R. 846(E), published 13 Nov 2025) says Rules 3, 5 to 16, 22 and 23 "shall come into force eighteen months after the date of publication". The commencement notification for the Act's sections, G.S.R. 843(E), gives the same date (from my research notes; I have not checked it against the gazette text). Some sources give the 14th, because they date the gazette a day later. Plan for the 13th. Consent Manager registration starts on 13 Nov 2026 (Rule 1(3): "one year after the date of publication"). Before 13 May 2027, nothing is in force for a normal business app.
 
 ## What you get
 
@@ -70,7 +70,7 @@ class User extends Authenticatable
 
 If your people are not `App\Models\User`, set `DATA_RIGHTS_SUBJECT_MODEL` in `.env`. The email column is `email` unless you change `subject_email_column`.
 
-The trait gives the model the `dataRightsConsents()`, `dataRightsRequests()` and `dataRightsProfile()` relations and a `consentsTo($purpose)` method. When the model is deleted, the trait marks the person as erased.
+The trait gives the model the `dataRightsConsents()`, `dataRightsRequests()` and `dataRightsProfile()` relations and a `consentsTo($purpose)` method. When the model is deleted, the trait marks the person as erased. When a soft-deleted model is restored, it clears that mark.
 
 **5. Set the contact details in `.env`.**
 
@@ -142,7 +142,7 @@ This creates `app/DataRights/Orders.php`. It implements two contracts:
 - `Exporter` gives the rows you hold about a person. They go into the data summary.
 - `Eraser` erases them, and says what it kept and why.
 
-Fill in `tables()`, `processing()`, `export()` and `erase()`. Skip records where `$context->isHeld($record)` is true, because a legal hold covers them. Report what another law makes you keep with `ErasureOutcome::retained($count, 'reason', $until)`. The reason is shown to the person and stored in the request result, so keep personal data out of it. Then add the class to `sources` in the config:
+Fill in `tables()`, `processing()`, `export()` and `erase()`. Skip records where `$context->isHeld($record)` is true, because a legal hold covers them. Report what another law makes you keep with `ErasureOutcome::retained($count, 'reason', $until)`. The reason is shown to the person and stored in the request result, so keep personal data out of it. Without at least one Eraser in `sources`, an erasure request cannot be carried out: Erase refuses and tells the person nothing, and the checker reports an error. Then add the class to `sources` in the config:
 
 ```php
 'sources' => [
@@ -175,7 +175,7 @@ The checker looks at what the package can see. It cannot tell whether your app m
 
 **Optional steps.**
 
-- Add the `data-rights.activity` middleware to your signed-in routes if you turn on inactivity erasure. It notes when a person was last seen (at most once a day) and clears a pending erasure warning.
+- Add the `data-rights.activity` middleware to your signed-in routes if you turn on inactivity erasure. It notes when a person was last seen (at most once a day), clears a pending erasure warning, and clears a past erasure when a person whose account was kept comes back.
 - Bind your own parent check if your app has users under 18 (see "Using it in code").
 - Run `php artisan data-rights:notify-existing` to send the notice to people who joined before the duties start. If you already hold consents from before you installed the package, record each one with `DataRights::consents()->importLegacy($user, 'purpose', $givenAt)`.
 
@@ -238,7 +238,7 @@ Event::listen(ConsentWithdrawn::class, function (ConsentWithdrawn $event) {
 
 The events are `ConsentGiven`, `ConsentWithdrawn`, `NoticePublished`, `RequestReceived`, `RequestStatusChanged`, `PersonalDataErased`, `BreachRecorded`, `ErasureWarningSent` and `GuardianConsentRecorded`. Stopping processing after a withdrawal is your app's job. The package tells you and keeps the record.
 
-**Children.** When `children.enabled` is true (the default), the consent choices page asks whether the person is 18 or older and stores only that answer. For someone under 18, a parent must confirm before consent can be given. The package cannot check a parent. Write a class that implements `ParentalConsentVerifier`, and bind it:
+**Children.** When `children.enabled` is true (the default), the consent choices page asks whether the person is 18 or older and stores only that answer. The answer is locked once given; staff can correct it on the Children page of the dashboard, with a note that is stored encrypted. For someone under 18, a parent must confirm before any purpose is allowed. The package cannot check a parent. Write a class that implements `ParentalConsentVerifier`, and bind it:
 
 ```php
 use Illuminate\Database\Eloquent\Model;
@@ -286,7 +286,7 @@ class Order extends Model
 
 You can also override `retentionDays()`, `retentionDateColumn()` (default `updated_at`), `retentionQuery()` and `eraseForRetention()` (default `delete()`).
 
-**Legal holds.** Place a hold on a person from the Retention page of the dashboard, or on any model in code with `DataRights::retention()->placeHold($model, 'reason', 'law reference', $until)`. A held record is not erased by the keeper, and a held person is not erased by a request.
+**Legal holds.** Place a hold on a person from the Retention page of the dashboard, or on any model in code with `DataRights::retention()->placeHold($model, 'reason', 'law reference', $until)`. A held record is not erased by the keeper, and a held person is not erased by a request. A hold on a person does not protect the records of your `HasRetention` models: to keep one of those, hold the record itself, for example `placeHold($order, ...)`.
 
 ## The pages it adds
 
@@ -310,13 +310,13 @@ JSON for apps with their own screens is under `/data-rights/api`. The notice nee
 | Page | What it does |
 | --- | --- |
 | Overview | Open requests and the nearest due date, overdue requests, breaches waiting for the Board report, consents per purpose, the last retention run, checker errors |
-| Requests | List with filters. Record a request that came by email or phone. Check identity, change the status, preview the data summary, complete or reject with a reply, erase |
+| Requests | List with filters. Record a request that came by email or phone. Check identity, change the status, preview the data summary, complete or reject with a reply, erase. An erasure request is closed only by Erase, which also cancels the person's other open requests |
 | Consents | Look up a person by email. See her ledger. Download the proof |
 | Notices | See every version. Publish a new one |
 | Breaches | Record a breach, add affected people by email, get the three drafts, mark the Board alert and report as sent, notify people |
-| Retention | Past runs. Place or release a legal hold on a person |
+| Retention | Past runs. Place or release a legal hold on a person. Record contact from a person (a call, a letter or an email), which clears a pending erasure warning (Rule 8(2)) |
 | Processors | The register of processors and other fiduciaries |
-| Children | Counts of people who said they are under 18, and the guardian consents |
+| Children | Counts of people who said they are under 18, the guardian consents, and a form to correct a person's age answer with a note |
 | Check | The checker report |
 
 The dashboard also has read-only JSON under `/data-rights-desk/api`. It is English only.
@@ -341,8 +341,8 @@ The retention keeper works in this order:
 1. It raises `keep_days` to 365 if it is lower.
 2. It deletes processing logs older than `keep_days`, unless the person is on legal hold.
 3. It erases records of the models in `retention.models`, skipping held ones.
-4. If inactivity erasure is on, it warns people who are about to reach the mark, then erases those who were warned and did not come back.
-5. It deletes the package's records of people erased more than `keep_days` ago.
+4. If inactivity erasure is on, it warns people who are about to reach the mark, then erases those who were warned and did not come back (only when at least one Eraser is configured).
+5. It deletes the package's records of people erased more than `keep_days` ago, but only those dated on or before the erasure. A person who comes back (signs in through `data-rights.activity`, gives consent, makes a request, is restored, or is recorded as having contacted you) is no longer treated as erased, and her newer records stay.
 6. It deletes requests that closed more than `keep_days` ago.
 7. It records the run with counts only.
 
@@ -356,11 +356,11 @@ The package does not copy your users' names or emails. It stores the type and id
 
 | Table | What it holds | Encrypted | Kept for |
 | --- | --- | --- | --- |
-| `data_rights_subjects` | Per person: the age answer (adult or under 18), whether she has a lawful guardian, when she was last seen, the erasure warning and the erased time | none | Deleted `keep_days` after the person is erased, with her other package records |
+| `data_rights_subjects` | Per person: the age answer (adult or under 18), when and why staff changed it and who did, whether she has a lawful guardian, when she was last seen, the erasure warning and the erased time | `age_note` | Deleted `keep_days` after the person is erased, once none of her package records is left |
 | `data_rights_notices` | Every published version of the notice: the text, its hash, a snapshot of the purposes | none | Kept. It shows what a person saw |
 | `data_rights_notice_deliveries` | Which person was sent which notice version, by which channel, and when | none | Until `keep_days` after the person is erased |
 | `data_rights_consents` | The ledger: purpose, given or withdrawn, the notice version and hash, language, channel, who gave it, Consent Manager details, the time. The IP address and the user agent only if you turn them on | none | While the person exists. Rows are never changed. They are deleted `keep_days` after she is erased |
-| `data_rights_requests` | Type, status, dates, identity method, a result summary (counts, and the reasons your Erasers give) | `details`, `response` | Open requests stay. A closed request is deleted `keep_days` after it closed |
+| `data_rights_requests` | Type, status, dates, how identity was checked, a result summary (counts, and the reasons your Erasers give) | `details`, `response`, `identity_method` | Open requests stay. A closed request is deleted `keep_days` after it closed |
 | `data_rights_request_events` | The status changes of a request | `note` | With its request |
 | `data_rights_nominations` | The nominee's name, contact and relationship | all three | Deleted at once when erasure runs for the person (a request or inactivity). If the user model is deleted some other way, they go `keep_days` later. Removing a nomination deletes it at once |
 | `data_rights_guardian_consents` | Which kind of guardian, which method, when, and which verifier class | `guardian_name`, `verification_reference` | Until `keep_days` after the person is erased |
@@ -372,6 +372,8 @@ The package does not copy your users' names or emails. It stores the type and id
 | `data_rights_processing_logs` | The person, the purpose, a short activity label (up to 120 characters) and the time | none | Deleted when older than `keep_days`, unless the person is on legal hold |
 
 The IP address and the user agent of a consent are off by default (`consent.record_ip` and `consent.record_user_agent`). When you turn them on they are stored in plain text. The package never stores a birth date, and it writes no personal data to your logs.
+
+The emails are queued. Until a queued email is sent, the job in your queue (and in `failed_jobs`, if it fails) holds the person's address, and for an erasure reply the address captured before erasure. Clear failed jobs you no longer need. If you use the `database` notification channel, the `notifications` table holds only the type, a reference and dates.
 
 Your own tables are not touched. The Exporters and Erasers that you write decide what happens to them.
 
