@@ -39,7 +39,7 @@ class ConsentLedger
     /**
      * s.6(1): consent for one purpose, from a clear affirmative action.
      *
-     * @param  array{channel?: ConsentChannel|string, locale?: string|null, ip?: string|null, user_agent?: string|null, given_by?: GivenBy|string, guardian_consent?: GuardianConsent|string|null}  $options
+     * @param  array{channel?: ConsentChannel|string, locale?: string|null, ip?: string|null, user_agent?: string|null, given_by?: GivenBy|string, guardian_consent?: GuardianConsent|string|null, notice?: Notice|string|null}  $options
      *
      * @throws NoticeMissing when no notice is published for the locale (s.5(1))
      */
@@ -47,11 +47,13 @@ class ConsentLedger
     {
         $definition = $this->purposes->get($purpose);
         $locale = $this->localeFor($subject, $options);
-        $notice = $this->notices->current($locale);
+        $notice = $this->noticeFor($options['notice'] ?? null, $locale);
 
         if ($notice === null) {
             throw NoticeMissing::forLocale($locale);
         }
+
+        $locale = $notice->locale;
 
         $record = $this->record($subject, $definition, ConsentAction::Given, $notice, $locale, $options);
 
@@ -256,6 +258,48 @@ class ConsentLedger
             : new ConsentWithdrawn($subject, $purpose->key, $record));
 
         return $record;
+    }
+
+    /**
+     * Consent for several purposes from one form, such as a sign-up form. Only purposes that
+     * need consent are recorded; anything else in the list is ignored.
+     *
+     * @param  list<string>  $purposes
+     * @param  array{channel?: ConsentChannel|string, locale?: string|null, ip?: string|null, user_agent?: string|null, given_by?: GivenBy|string, guardian_consent?: GuardianConsent|string|null, notice?: Notice|string|null}  $options
+     * @return list<ConsentRecord>
+     *
+     * @throws NoticeMissing when no notice is published for the locale (s.5(1))
+     */
+    public function giveMany(Model $subject, array $purposes, array $options = []): array
+    {
+        $consentBased = $this->purposes->consentBased();
+        $records = [];
+
+        foreach (array_values(array_unique($purposes)) as $key) {
+            if (isset($consentBased[$key])) {
+                $records[] = $this->give($subject, $key, $options);
+            }
+        }
+
+        return $records;
+    }
+
+    /** The notice the form showed (s.6(10) proof), or the current one for the locale. */
+    private function noticeFor(Notice|string|null $notice, string $locale): ?Notice
+    {
+        if ($notice instanceof Notice) {
+            return $notice;
+        }
+
+        if (is_string($notice) && $notice !== '') {
+            $shown = Notice::query()->find($notice);
+
+            if ($shown instanceof Notice) {
+                return $shown;
+            }
+        }
+
+        return $this->notices->current($locale);
     }
 
     /** @param  array<string, mixed>  $options */

@@ -63,6 +63,7 @@ class DataRightsDeskServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'data-rights');
+        Blade::anonymousComponentPath(__DIR__.'/../resources/views/components', 'data-rights');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'data-rights');
 
         View::composer(['data-rights::layouts.public', 'data-rights::layouts.desk'], LayoutComposer::class);
@@ -165,6 +166,15 @@ class DataRightsDeskServiceProvider extends ServiceProvider
                 ->prefix($publicPrefix)
                 ->name('data-rights.')
                 ->group(__DIR__.'/../routes/public.php');
+        }
+
+        $api = (array) config('data-rights.routes.api', []);
+
+        if ($api['enabled'] ?? true) {
+            Route::middleware((array) ($api['middleware'] ?? ['web']))
+                ->prefix($publicPrefix.'/api')
+                ->name('data-rights.api.')
+                ->group(__DIR__.'/../routes/api.php');
         }
 
         if ($dashboard['enabled'] ?? true) {

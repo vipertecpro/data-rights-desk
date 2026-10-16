@@ -149,4 +149,14 @@ return [
     ],
 
     'guardian_verifier_missing' => 'Parent and guardian checks are not set up in this app yet. Please contact us.',
+
+    'signup' => [
+        'legend' => 'Your consent',
+        'intro' => 'Tick each use you agree to. Nothing is ticked for you.',
+        'notice_link' => 'Read the privacy notice',
+        'data_used' => 'Data used:',
+        'withdraw' => 'You can withdraw any of these later, as easily as you give it.',
+        'no_notice' => 'The privacy notice is not published yet, so consent cannot be asked for.',
+        'required' => 'Please give consent for this use to continue.',
+    ],
 ];

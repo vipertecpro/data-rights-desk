@@ -4,10 +4,12 @@ namespace Vipertecpro\DataRightsDesk;
 
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Vipertecpro\DataRightsDesk\Breaches\BreachDesk;
 use Vipertecpro\DataRightsDesk\Checker\Checker;
 use Vipertecpro\DataRightsDesk\Children\ChildGuard;
 use Vipertecpro\DataRightsDesk\Consents\ConsentLedger;
+use Vipertecpro\DataRightsDesk\Enums\ConsentChannel;
 use Vipertecpro\DataRightsDesk\Models\ConsentRecord;
 use Vipertecpro\DataRightsDesk\Models\GuardianConsent;
 use Vipertecpro\DataRightsDesk\Models\Notice;
@@ -44,6 +46,32 @@ class DataRightsManager
     public function give(Model $subject, string $purpose, array $options = []): ConsentRecord
     {
         return $this->consents()->give($subject, $purpose, $options);
+    }
+
+    /**
+     * Record the purposes ticked in <x-data-rights::consent-fields> (or your own form that posts
+     * data_rights[purposes][] and data_rights[notice]), against the notice version the form showed.
+     * Pass the request, or the input array a Fortify action such as CreateNewUser receives.
+     *
+     * @param  Request|array<string, mixed>  $input
+     * @return list<ConsentRecord>
+     */
+    public function giveFromForm(Model $subject, Request|array $input, string $field = 'data_rights'): array
+    {
+        $request = $input instanceof Request ? $input : request();
+        $form = $input instanceof Request ? (array) $input->input($field, []) : (array) ($input[$field] ?? []);
+
+        $purposes = array_values(array_filter((array) ($form['purposes'] ?? []), 'is_string'));
+        $notice = $form['notice'] ?? null;
+        $locale = $form['locale'] ?? null;
+
+        return $this->consents()->giveMany($subject, $purposes, array_filter([
+            'channel' => ConsentChannel::Web,
+            'notice' => is_string($notice) ? $notice : null,
+            'locale' => is_string($locale) ? $locale : null,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ], fn (mixed $value): bool => $value !== null));
     }
 
     /** @param  array<string, mixed>  $options  channel, locale, ip, user_agent, given_by, guardian_consent */

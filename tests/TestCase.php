@@ -45,6 +45,8 @@ abstract class TestCase extends Orchestra
         $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('k', 32)));
         $app['config']->set('app.url', 'https://shop.example');
         $app['config']->set('database.default', env('DB_CONNECTION', 'testing'));
+        // CI's SQL Server container uses a self-signed certificate (ODBC Driver 18 encrypts by default).
+        $app['config']->set('database.connections.sqlsrv.trust_server_certificate', true);
         $app['config']->set('cache.default', 'array');
         $app['config']->set('mail.default', 'array');
         $app['config']->set('queue.default', 'sync');

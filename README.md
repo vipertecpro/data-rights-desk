@@ -31,7 +31,9 @@ The package makes no outbound HTTP calls of its own. It loads no fonts, scripts 
 
 - PHP 8.3 or newer.
 - Laravel 12 or 13. Laravel 12 gets security fixes until 24 Feb 2027, which is before the duties start. Laravel 13 gets them until 17 Mar 2028 (Laravel's support table, checked on 16 Oct 2026).
-- A database, and a mail channel (or another notification channel) for the emails. The package's notifications are queued, so a queue worker must be running (unless your queue connection is `sync`).
+- A database. Every release is tested on SQLite, MySQL 8.0, MariaDB 11, PostgreSQL 16 and SQL Server 2022.
+- Any front end. The package's own pages are plain Blade, and its JSON feed serves screens you build yourself. I tested it end to end with Laravel's Livewire, React, Vue and Svelte starter kits.
+- A mail channel (or another notification channel) for the emails. The package's notifications are queued, so a queue worker must be running (unless your queue connection is `sync`).
 
 ## Install
 
@@ -51,7 +53,7 @@ The service provider and the `DataRights` facade are found automatically.
 php artisan data-rights:install
 ```
 
-This writes `config/data-rights.php` and the migrations into your app, then prints the next steps.
+This writes `config/data-rights.php` and the migrations into your app, then prints the next steps. It also reads your app (its database, its front end and whether Laravel Sanctum is installed) and prints the steps that fit it. It never edits your code.
 
 **3. Migrate.**
 
@@ -206,6 +208,30 @@ For a person who has said she is under 18, or who has a lawful guardian, no purp
 
 If you build your own screens, `DataRights::give($user, 'marketing', [...])` and `DataRights::withdraw(...)` write ledger rows. The options are `channel`, `locale`, `ip`, `user_agent`, `given_by` and `guardian_consent`. An unknown purpose throws `UnknownPurpose`. Giving consent without a published notice throws `NoticeMissing`. `DataRights::proof($user, 'marketing')` returns the proof as an array.
 
+**At sign-up.** Put the consent box in your registration form. It shows the notice link and one unticked box per purpose that needs consent:
+
+```blade
+<x-data-rights::consent-fields :required="['account']" />
+```
+
+Then record the ticked purposes when you create the user. The record names the notice version the form showed. In a Fortify app this goes in `app/Actions/Fortify/CreateNewUser.php`:
+
+```php
+use Vipertecpro\DataRightsDesk\Facades\DataRights;
+use Vipertecpro\DataRightsDesk\Rules\IncludesPurpose;
+
+Validator::make($input, [
+    // your other rules
+    'data_rights.purposes' => ['required', 'array', new IncludesPurpose('account')],
+])->validate();
+
+$user = User::create([/* ... */]);
+
+DataRights::giveFromForm($user, $input); // or pass the Request
+```
+
+Which purposes your sign-up needs is your decision. Leave out `:required` and the rule if none is needed. With React, Vue or Svelte, post `data_rights[purposes][]`, `data_rights[notice]` and `data_rights[locale]` from your own form (the notice comes from `/data-rights/api/notice`), then call the same `giveFromForm()`.
+
 **On a route:**
 
 ```php
@@ -308,6 +334,17 @@ All paths below use the default prefixes. Change them, or switch a group off, un
 | `/data-rights/requests/{request}` | yes, own | One request: its status, the reply, a cancel button, and a download of the data summary for a completed access request |
 
 JSON for apps with their own screens is under `/data-rights/api`. The notice needs no sign-in. The purposes, consent, withdrawal and requests need one. Creating a request is limited to six a minute for each person.
+
+By default the JSON feed uses the browser session, which suits Blade, Livewire and Inertia pages on the same site. A mobile app, including one built with NativePHP, signs in with a token instead. Install Laravel Sanctum (`php artisan install:api`, then add `HasApiTokens` to your user model) and set this in `config/data-rights.php`:
+
+```php
+'routes' => [
+    // ...
+    'api' => ['enabled' => true, 'middleware' => ['api'], 'auth' => 'auth:sanctum'],
+],
+```
+
+The app then sends `Authorization: Bearer <token>` with every call, and consent given this way is recorded with the channel `api`. In this mode the feed expects a token on every call, including from your own web pages. The JSON feed works even when the public pages are switched off.
 
 **Dashboard** (prefix `data-rights-desk`, middleware `web` and `auth`, plus the `viewDataRightsDesk` gate on every route):
 

@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Vipertecpro\DataRightsDesk\Http\Controllers\ApiController;
 use Vipertecpro\DataRightsDesk\Http\Controllers\NominationController;
 use Vipertecpro\DataRightsDesk\Http\Controllers\NoticePageController;
 use Vipertecpro\DataRightsDesk\Http\Controllers\PreferenceController;
@@ -34,18 +33,3 @@ Route::middleware('auth')->group(function () use ($purpose): void {
     Route::post('nominations', [NominationController::class, 'store'])->name('nominations.store');
     Route::delete('nominations/{nomination}', [NominationController::class, 'destroy'])->name('nominations.destroy');
 });
-
-if (config('data-rights.routes.api.enabled', true)) {
-    Route::prefix('api')->name('api.')->group(function () use ($purpose): void {
-        Route::get('notice', [ApiController::class, 'notice'])->name('notice');
-
-        Route::middleware('auth')->group(function () use ($purpose): void {
-            Route::get('purposes', [ApiController::class, 'purposes'])->name('purposes');
-            Route::post('consents/{purpose}', [ApiController::class, 'give'])->where('purpose', $purpose)->name('consents.give');
-            Route::delete('consents/{purpose}', [ApiController::class, 'withdraw'])->where('purpose', $purpose)->name('consents.withdraw');
-            Route::get('requests', [ApiController::class, 'requests'])->name('requests.index');
-            Route::post('requests', [ApiController::class, 'storeRequest'])->middleware('throttle:6,1')->name('requests.store');
-            Route::get('requests/{request}', [ApiController::class, 'request'])->name('requests.show');
-        });
-    });
-}

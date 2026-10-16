@@ -4,6 +4,7 @@ namespace Vipertecpro\DataRightsDesk\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 use Vipertecpro\DataRightsDesk\DataRightsManager;
 use Vipertecpro\DataRightsDesk\Enums\ConsentChannel;
@@ -184,7 +185,7 @@ class ApiController
             'locale' => $notice->locale,
             'hash' => $notice->hash,
             'published_at' => $notice->published_at->toIso8601String(),
-            'url' => route('data-rights.notice.version', ['version' => $notice->version, ...$this->langParameter($notice->locale)]),
+            'url' => Route::has('data-rights.notice.version') ? route('data-rights.notice.version', ['version' => $notice->version, ...$this->langParameter($notice->locale)]) : null,
         ];
     }
 
