@@ -2,7 +2,9 @@
 
 namespace Vipertecpro\DataRightsDesk\Tests;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +22,12 @@ abstract class TestCase extends Orchestra
 
         // §12 row 30: the package makes no outbound network calls.
         Http::preventStrayRequests();
+
+        // Laravel's starter kits switch the app to immutable dates; run the suite both ways
+        // (DATA_RIGHTS_IMMUTABLE_DATES=1 vendor/bin/pest) so neither kind of app breaks.
+        if (getenv('DATA_RIGHTS_IMMUTABLE_DATES') === '1') {
+            Date::use(CarbonImmutable::class);
+        }
     }
 
     /** @return list<class-string> */

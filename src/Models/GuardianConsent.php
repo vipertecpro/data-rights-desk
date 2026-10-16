@@ -2,11 +2,11 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\GuardianKind;
 use Vipertecpro\DataRightsDesk\Enums\GuardianMethod;
 use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
@@ -21,9 +21,9 @@ use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
  * @property int|string|null $guardian_id
  * @property string|null $guardian_name
  * @property string|null $verification_reference
- * @property Carbon $verified_at
+ * @property CarbonInterface $verified_at
  * @property string $verified_by
- * @property Carbon|null $revoked_at
+ * @property CarbonInterface|null $revoked_at
  */
 class GuardianConsent extends Model
 {

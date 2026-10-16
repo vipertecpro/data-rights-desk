@@ -2,11 +2,11 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\RequestStatus;
 
 /**
@@ -17,7 +17,7 @@ use Vipertecpro\DataRightsDesk\Enums\RequestStatus;
  * @property string|null $actor_type
  * @property int|string|null $actor_id
  * @property string|null $note
- * @property Carbon|null $created_at
+ * @property CarbonInterface|null $created_at
  */
 class RequestEvent extends Model
 {

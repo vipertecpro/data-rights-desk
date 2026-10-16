@@ -2,11 +2,11 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Closure;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\ConsentAction;
 use Vipertecpro\DataRightsDesk\Enums\ConsentChannel;
 use Vipertecpro\DataRightsDesk\Enums\GivenBy;
@@ -33,8 +33,8 @@ use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
  * @property string|null $external_reference
  * @property string|null $ip_address
  * @property string|null $user_agent
- * @property Carbon $occurred_at
- * @property Carbon|null $created_at
+ * @property CarbonInterface $occurred_at
+ * @property CarbonInterface|null $created_at
  */
 class ConsentRecord extends Model
 {

@@ -2,11 +2,11 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\RequestChannel;
 use Vipertecpro\DataRightsDesk\Enums\RequestStatus;
 use Vipertecpro\DataRightsDesk\Enums\RequestType;
@@ -26,13 +26,13 @@ use Vipertecpro\DataRightsDesk\Support\Limits;
  * @property array<string, mixed>|null $result
  * @property RequestChannel $channel
  * @property string $locale
- * @property Carbon $received_at
- * @property Carbon $due_at
- * @property Carbon|null $identity_verified_at
+ * @property CarbonInterface $received_at
+ * @property CarbonInterface $due_at
+ * @property CarbonInterface|null $identity_verified_at
  * @property string|null $identity_method
- * @property Carbon|null $closed_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonInterface|null $closed_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  */
 class DataRightsRequest extends Model
 {

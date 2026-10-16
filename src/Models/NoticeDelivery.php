@@ -2,10 +2,10 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\DeliveryChannel;
 use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
 
@@ -15,7 +15,7 @@ use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
  * @property string $id
  * @property string $notice_id
  * @property DeliveryChannel $channel
- * @property Carbon $delivered_at
+ * @property CarbonInterface $delivered_at
  */
 class NoticeDelivery extends Model
 {

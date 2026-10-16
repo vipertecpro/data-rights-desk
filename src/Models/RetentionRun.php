@@ -2,16 +2,16 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 /**
  * One run of the retention keeper. The summary holds counts only.
  *
  * @property string $id
- * @property Carbon $started_at
- * @property Carbon|null $finished_at
+ * @property CarbonInterface $started_at
+ * @property CarbonInterface|null $finished_at
  * @property bool $pretend
  * @property array<string, mixed> $summary
  */

@@ -2,9 +2,9 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
 
 /**
@@ -14,7 +14,7 @@ use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
  * @property string $id
  * @property string $purpose
  * @property string $activity
- * @property Carbon $occurred_at
+ * @property CarbonInterface $occurred_at
  */
 class ProcessingLog extends Model
 {

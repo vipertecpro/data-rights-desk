@@ -2,10 +2,10 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Support\Markdown;
 
 /**
@@ -21,7 +21,7 @@ use Vipertecpro\DataRightsDesk\Support\Markdown;
  * @property string $body
  * @property string $hash
  * @property array<string, mixed> $purposes
- * @property Carbon $published_at
+ * @property CarbonInterface $published_at
  */
 class Notice extends Model
 {

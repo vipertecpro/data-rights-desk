@@ -2,10 +2,10 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
 
 /**
@@ -15,8 +15,8 @@ use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
  * @property string $nominee_name
  * @property string $nominee_contact
  * @property string|null $relationship
- * @property Carbon|null $created_at
- * @property Carbon|null $revoked_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $revoked_at
  */
 class Nomination extends Model
 {

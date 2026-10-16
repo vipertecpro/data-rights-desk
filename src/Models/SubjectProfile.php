@@ -2,9 +2,9 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\AgeStatus;
 use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
 
@@ -15,12 +15,12 @@ use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
  * @property string $subject_type
  * @property int|string $subject_id
  * @property AgeStatus|null $age_status
- * @property Carbon|null $age_declared_at
+ * @property CarbonInterface|null $age_declared_at
  * @property bool $has_lawful_guardian
- * @property Carbon|null $last_seen_at
- * @property Carbon|null $erasure_warned_at
- * @property Carbon|null $erasure_due_at
- * @property Carbon|null $erased_at
+ * @property CarbonInterface|null $last_seen_at
+ * @property CarbonInterface|null $erasure_warned_at
+ * @property CarbonInterface|null $erasure_due_at
+ * @property CarbonInterface|null $erased_at
  */
 class SubjectProfile extends Model
 {

@@ -95,3 +95,8 @@ jobs:
 
       - name: Pest
         run: vendor/bin/pest
+
+      - name: Pest (immutable dates, as in Laravel's starter kits)
+        run: vendor/bin/pest
+        env:
+          DATA_RIGHTS_IMMUTABLE_DATES: '1'

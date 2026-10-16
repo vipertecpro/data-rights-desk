@@ -2,10 +2,10 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
 
 /**
@@ -15,7 +15,7 @@ use Vipertecpro\DataRightsDesk\Models\Concerns\BelongsToSubject;
  * @property string $breach_id
  * @property string $subject_type
  * @property int|string $subject_id
- * @property Carbon|null $notified_at
+ * @property CarbonInterface|null $notified_at
  * @property string|null $channel
  */
 class BreachSubject extends Model

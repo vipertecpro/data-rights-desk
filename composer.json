@@ -49,8 +49,10 @@
         "ci": [
             "pint --test",
             "phpstan analyse --memory-limit=1G",
-            "pest"
-        ]
+            "pest",
+            "@test-immutable"
+        ],
+        "test-immutable": "DATA_RIGHTS_IMMUTABLE_DATES=1 pest"
     },
     "extra": {
         "laravel": {

@@ -2,10 +2,10 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * s.8(6), Rule 7: a personal data breach and the drafts the business sends.
@@ -22,14 +22,14 @@ use Illuminate\Support\Carbon;
  * @property string|null $remedial
  * @property string|null $consequences_for_people
  * @property string|null $safety_steps
- * @property Carbon|null $occurred_at
- * @property Carbon $became_aware_at
- * @property Carbon|null $board_alerted_at
- * @property Carbon $board_report_due_at
- * @property Carbon|null $board_extension_until
- * @property Carbon|null $board_reported_at
- * @property Carbon|null $closed_at
- * @property Carbon|null $created_at
+ * @property CarbonInterface|null $occurred_at
+ * @property CarbonInterface $became_aware_at
+ * @property CarbonInterface|null $board_alerted_at
+ * @property CarbonInterface $board_report_due_at
+ * @property CarbonInterface|null $board_extension_until
+ * @property CarbonInterface|null $board_reported_at
+ * @property CarbonInterface|null $closed_at
+ * @property CarbonInterface|null $created_at
  */
 class Breach extends Model
 {
@@ -99,7 +99,7 @@ class Breach extends Model
     }
 
     /** The report deadline, or the longer period the Board allowed (Rule 7(2)(b)). */
-    public function reportDueAt(): Carbon
+    public function reportDueAt(): CarbonInterface
     {
         if ($this->board_extension_until !== null && $this->board_extension_until->greaterThan($this->board_report_due_at)) {
             return $this->board_extension_until;

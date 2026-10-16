@@ -2,11 +2,11 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 
 /**
  * A legal hold keeps a record from erasure while another law needs it kept.
@@ -16,9 +16,9 @@ use Illuminate\Support\Carbon;
  * @property string $holdable_id
  * @property string $reason
  * @property string|null $law_reference
- * @property Carbon $placed_at
- * @property Carbon|null $expires_at
- * @property Carbon|null $released_at
+ * @property CarbonInterface $placed_at
+ * @property CarbonInterface|null $expires_at
+ * @property CarbonInterface|null $released_at
  */
 class LegalHold extends Model
 {

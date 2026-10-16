@@ -2,10 +2,10 @@
 
 namespace Vipertecpro\DataRightsDesk\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\ProcessorKind;
 
 /**
@@ -19,7 +19,7 @@ use Vipertecpro\DataRightsDesk\Enums\ProcessorKind;
  * @property list<string> $purposes
  * @property list<string> $data_shared
  * @property string|null $contract_reference
- * @property Carbon|null $contract_date
+ * @property CarbonInterface|null $contract_date
  * @property bool $security_clause
  * @property string|null $country
  * @property bool $hidden_from_access_summary
