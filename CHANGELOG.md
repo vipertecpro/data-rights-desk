@@ -21,6 +21,9 @@ First release. Needs PHP 8.3 or newer and Laravel 12 or 13.
 - **A contact block** (Rule 9) on the rights page, in the notice and in every email.
 - **A dashboard** at `/data-rights-desk` with an overview, requests, consents, notices, breaches, retention, processors, children and the checker, plus read-only JSON. It is behind the `viewDataRightsDesk` gate.
 - **A checker**: `php artisan data-rights:check` reports errors and warnings and exits with code 1 on errors.
+- **Safeguards on erasure**: an erasure request can only be closed by erasing, erasure refuses to run when no Eraser is configured (a checker error), the person's other open requests are cancelled, and the keeper deletes only records dated up to the erasure, so a person who comes back keeps her newer records.
+- **Age answer and contact**: a person's age answer is locked once given, and staff correct it on the Children page with an encrypted note. Staff can record that a person got in touch (Rule 8(2)), which clears a pending erasure warning.
+- **Children**: for a person under 18, every purpose waits for a parent or lawful guardian unless it carries a Fourth Schedule key (section 9(1) covers "any personal data of a child").
 - **Commands**: `data-rights:install`, `data-rights:notice`, `data-rights:notify-existing`, `data-rights:retain`, `data-rights:proof`, `data-rights:breach-draft`, `data-rights:check` and `data-rights:make-source`.
 - **In your code**: the `DataRights` facade, the `HasDataRights` trait, the `consent:{purpose}` and `data-rights.consent:{purpose}` middleware, the `data-rights.activity` middleware, the `@dataRightsAllows` and `@dataRightsTracking` Blade directives, and nine events from `ConsentGiven` to `GuardianConsentRecorded`.
 - **Languages**: English is ready, Hindi is written and set to `needs_review`, and the other 21 languages of the Eighth Schedule each have a `meta.php` file with the status `needed`.
