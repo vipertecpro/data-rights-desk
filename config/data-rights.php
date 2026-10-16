@@ -174,7 +174,10 @@ return [
     'routes' => [
         'public' => ['enabled' => true, 'prefix' => 'data-rights', 'middleware' => ['web']],
         'dashboard' => ['enabled' => true, 'prefix' => 'data-rights-desk', 'middleware' => ['web', 'auth']],
-        'api' => ['enabled' => true],
+        // JSON for apps with their own screens, under "{public prefix}/api". The defaults use the
+        // browser session (Blade, Livewire, Inertia on the same site). For token clients such as
+        // mobile or NativePHP apps, use 'middleware' => ['api'] and 'auth' => 'auth:sanctum'.
+        'api' => ['enabled' => true, 'middleware' => ['web'], 'auth' => 'auth'],
     ],
 
     'checker' => [

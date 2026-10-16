@@ -167,6 +167,15 @@ class DataRightsDeskServiceProvider extends ServiceProvider
                 ->group(__DIR__.'/../routes/public.php');
         }
 
+        $api = (array) config('data-rights.routes.api', []);
+
+        if ($api['enabled'] ?? true) {
+            Route::middleware((array) ($api['middleware'] ?? ['web']))
+                ->prefix($publicPrefix.'/api')
+                ->name('data-rights.api.')
+                ->group(__DIR__.'/../routes/api.php');
+        }
+
         if ($dashboard['enabled'] ?? true) {
             Route::middleware([...(array) ($dashboard['middleware'] ?? ['web', 'auth']), 'can:'.self::GATE])
                 ->prefix((string) ($dashboard['prefix'] ?? 'data-rights-desk'))
