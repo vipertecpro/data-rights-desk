@@ -245,7 +245,7 @@ class Checker
             }
 
             if ($missing !== []) {
-                $this->warning('uncovered_personal_columns', "Table [{$table}] has personal columns (".implode(', ', $columns).') with no '.implode(' and no ', $missing).'.');
+                $this->warning('uncovered_personal_columns', "Table [{$table}] has personal columns (".implode(', ', $columns).') but nothing covers them: add '.implode(', and ', $missing).'.');
             }
         }
     }
