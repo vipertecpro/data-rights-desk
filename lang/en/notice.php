@@ -21,7 +21,7 @@ return [
     'tracking' => 'This purpose includes tracking or behavioural monitoring. We do not use it for children.',
 
     'withdraw_heading' => 'Withdraw your consent',
-    'withdraw_body' => 'You can withdraw your consent at any time, as easily as you gave it. Open :url and press "Withdraw consent" next to the purpose.',
+    'withdraw_body' => 'You can withdraw your consent at any time, as easily as you gave it. Open :url and press "Withdraw consent" next to the purpose. Where we use data you gave us for a service without asking for consent, the button says "Stop this use".',
 
     'rights_heading' => 'Your rights',
     'rights_body' => 'You can ask for a summary of your personal data, ask us to correct, complete, update or erase it, nominate someone to use these rights for you, and raise a grievance. Make a request at :url. We reply within :days days.',

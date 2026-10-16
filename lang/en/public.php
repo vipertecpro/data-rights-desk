@@ -22,7 +22,7 @@ return [
         'list_heading' => 'What you can ask for',
         'right_access' => 'A summary of your personal data and how it is used.',
         'right_correction' => 'Correction, completion or updating of your data.',
-        'right_erasure' => 'Erasure of your data, unless a law needs it kept.',
+        'right_erasure' => 'Erasure of your data, unless it is still needed for the purpose you gave it for, or a law needs it kept.',
         'right_grievance' => 'A reply to a grievance about how your data was handled.',
         'right_nomination' => 'Nominating someone to use these rights for you if you die or cannot act.',
         'right_withdraw' => 'Withdrawing consent, as easily as you gave it.',

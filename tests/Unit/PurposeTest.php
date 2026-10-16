@@ -36,6 +36,6 @@ it('rejects invalid purpose definitions', function (string $key, array $definiti
 
 it('lists purposes per locale and the consent-based ones', function () {
     expect(array_keys(DataRights::purposes()->consentBased()))->toBe(['account', 'marketing', 'analytics'])
-        ->and(DataRights::purposes()->forLocale('hi')['marketing']['title'])->toBe('[hi] Product news by email')
+        ->and(DataRights::purposes()->forLocale('hi')['marketing']['title'])->toBe(config('data-rights.purposes.marketing.title.hi'))
         ->and(DataRights::purposes()->forLocale('hi')['analytics']['tracking'])->toBeTrue();
 });

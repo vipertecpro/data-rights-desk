@@ -62,19 +62,19 @@ return [
         'account' => [
             'title' => [
                 'en' => 'Your account',
-                'hi' => '[hi] Your account',
+                'hi' => 'आपका खाता',
             ],
             'description' => [
                 'en' => 'To create your account, let you sign in and keep it secure.',
-                'hi' => '[hi] To create your account, let you sign in and keep it secure.',
+                'hi' => 'आपका खाता बनाने, आपको साइन इन करने देने और उसे सुरक्षित रखने के लिए।',
             ],
             'goods_or_services' => [
                 'en' => 'Sign-in, account settings and access to the features you use.',
-                'hi' => '[hi] Sign-in, account settings and access to the features you use.',
+                'hi' => 'साइन-इन, खाते की सेटिंग और आप जिन सुविधाओं का उपयोग करते हैं उन तक पहुँच।',
             ],
             'data' => [
                 'en' => ['Name', 'Email address', 'Password (stored as a hash)'],
-                'hi' => ['[hi] Name', '[hi] Email address', '[hi] Password (stored as a hash)'],
+                'hi' => ['नाम', 'ईमेल पता', 'पासवर्ड (हैश के रूप में सहेजा गया)'],
             ],
             'basis' => 'consent',
             'legitimate_use' => null,
@@ -82,26 +82,26 @@ return [
             'fourth_schedule' => null,
             'withdrawal_effect' => [
                 'en' => 'We can no longer keep your account open.',
-                'hi' => '[hi] We can no longer keep your account open.',
+                'hi' => 'हम आपका खाता खुला नहीं रख पाएँगे।',
             ],
         ],
 
         'marketing' => [
             'title' => [
                 'en' => 'Product news by email',
-                'hi' => '[hi] Product news by email',
+                'hi' => 'ईमेल से उत्पाद समाचार',
             ],
             'description' => [
                 'en' => 'To send you emails about new features and offers.',
-                'hi' => '[hi] To send you emails about new features and offers.',
+                'hi' => 'नई सुविधाओं और ऑफ़र के बारे में आपको ईमेल भेजने के लिए।',
             ],
             'goods_or_services' => [
                 'en' => 'A newsletter at most twice a month.',
-                'hi' => '[hi] A newsletter at most twice a month.',
+                'hi' => 'महीने में अधिकतम दो बार न्यूज़लेटर।',
             ],
             'data' => [
                 'en' => ['Email address', 'Name'],
-                'hi' => ['[hi] Email address', '[hi] Name'],
+                'hi' => ['ईमेल पता', 'नाम'],
             ],
             'basis' => 'consent',
             'legitimate_use' => null,
@@ -113,19 +113,19 @@ return [
         'analytics' => [
             'title' => [
                 'en' => 'Usage analytics',
-                'hi' => '[hi] Usage analytics',
+                'hi' => 'उपयोग विश्लेषण (usage analytics)',
             ],
             'description' => [
                 'en' => 'To understand which pages and features you use, so we can improve them.',
-                'hi' => '[hi] To understand which pages and features you use, so we can improve them.',
+                'hi' => 'यह समझने के लिए कि आप कौन-से पेज और सुविधाएँ उपयोग करते हैं, ताकि हम उन्हें बेहतर बना सकें।',
             ],
             'goods_or_services' => [
                 'en' => 'Reports about how the app is used.',
-                'hi' => '[hi] Reports about how the app is used.',
+                'hi' => 'ऐप के उपयोग के बारे में रिपोर्ट।',
             ],
             'data' => [
                 'en' => ['Pages you visit', 'Buttons you press', 'Device type'],
-                'hi' => ['[hi] Pages you visit', '[hi] Buttons you press', '[hi] Device type'],
+                'hi' => ['आप जो पेज देखते हैं', 'आप जो बटन दबाते हैं', 'डिवाइस का प्रकार'],
             ],
             'basis' => 'consent',
             'legitimate_use' => null,

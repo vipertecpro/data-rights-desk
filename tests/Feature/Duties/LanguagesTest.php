@@ -11,11 +11,11 @@ it('s.5(3): the notice and the consent page are offered in each offered locale',
 
     $this->get('/data-rights/notice?lang=hi')->assertOk()
         ->assertSee('<html lang="hi" dir="ltr">', false)
-        ->assertSee('[hi] Product news by email')
+        ->assertSee(config('data-rights.purposes.marketing.title.hi'))
         ->assertSee('हिन्दी');
 
     $this->actingAs($user)->get('/data-rights/preferences?lang=hi')->assertOk()
-        ->assertSee('[hi] Product news by email')
+        ->assertSee(config('data-rights.purposes.marketing.title.hi'))
         ->assertSee('name="lang" value="hi"', false);
 
     $this->actingAs($user)->post('/data-rights/consents/marketing', ['lang' => 'hi'])
