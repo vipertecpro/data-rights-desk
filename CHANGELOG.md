@@ -2,7 +2,7 @@
 
 All notable changes to this package are written here. It follows Semantic Versioning.
 
-## 1.0.0 - Unreleased
+## 1.0.0 - 2026-10-16
 
 First release. Needs PHP 8.3 or newer and Laravel 12 or 13.
 

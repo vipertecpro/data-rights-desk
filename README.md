@@ -4,6 +4,8 @@
 
 Notices, consent records, data rights requests, retention, breach drafts and a dashboard that help a Laravel app meet India's Digital Personal Data Protection Act, 2023 and the DPDP Rules, 2025.
 
+For any Laravel app with users in India, wherever your business is based (section 3 of the Act).
+
 I built Data Rights Desk and I maintain it. It is free and MIT licensed.
 
 **Dates.** The duties of a business (a Data Fiduciary) under the Rules start on 13 May 2027: Rule 1(4) of the DPDP Rules, 2025 (G.S.R. 846(E), published 13 Nov 2025) says Rules 3, 5 to 16, 22 and 23 "shall come into force eighteen months after the date of publication". The commencement notification for the Act's sections, G.S.R. 843(E), gives the same date (from my research notes; I have not checked it against the gazette text). Some sources give the 14th, because they date the gazette a day later. Plan for the 13th. Consent Manager registration starts on 13 Nov 2026 (Rule 1(3): "one year after the date of publication"). Before 13 May 2027, nothing is in force for a normal business app.
