@@ -59,3 +59,17 @@ it('s.11: the person downloads the summary only for a completed access request w
     $this->travel(31)->days();
     $this->actingAs($this->user)->get("/data-rights/requests/{$request->id}/download")->assertNotFound();
 });
+
+it('s.11: the summary lists processors for every purpose the person ever consented to', function () {
+    $shared = ['kind' => 'processor', 'data_shared' => ['Email address'], 'contract_reference' => 'C1', 'security_clause' => true];
+    Processor::query()->create([...$shared, 'name' => 'Stats Co', 'purposes' => ['analytics']]);
+    Processor::query()->create([...$shared, 'name' => 'Mail Sender', 'purposes' => ['marketing']]);
+
+    DataRights::give($this->user, 'analytics');
+    DataRights::withdraw($this->user, 'analytics');
+
+    $summary = DataRights::requests()->accessSummary($this->user);
+
+    expect($summary['consents']['current']['analytics'])->toBeFalse()
+        ->and(array_column($summary['shared_with'], 'name'))->toBe(['Stats Co']);
+});

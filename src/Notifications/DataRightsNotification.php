@@ -30,20 +30,12 @@ abstract class DataRightsNotification extends Notification implements ShouldQueu
     abstract public function toMail(object $notifiable): MailMessage;
 
     /**
-     * For the database channel: the text without personal data beyond what the person already has.
+     * For the database channel: the type, a reference and dates only. Replies,
+     * breach text and contact details stay out of the notifications table.
      *
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
-    {
-        $mail = $this->toMail($notifiable);
-
-        return [
-            'subject' => $mail->subject,
-            'lines' => [...$mail->introLines, ...$mail->outroLines],
-            'action_url' => $mail->actionUrl,
-        ];
-    }
+    abstract public function toArray(object $notifiable): array;
 
     protected function message(): MailMessage
     {

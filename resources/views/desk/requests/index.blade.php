@@ -6,7 +6,7 @@
     <div class="drd-pagehead">
         <div>
             <h1>Requests</h1>
-            <p class="drd-lead">Every request has a 90-day ceiling (Rule 14(3)). Open requests come first, nearest due date first.</p>
+            <p class="drd-lead">Rule 14(3) sets 90 days for grievances. The package uses the same 90-day ceiling for every request type; that is its own choice. Open requests come first, nearest due date first.</p>
         </div>
         <a class="drd-button drd-button--primary" href="{{ route('data-rights-desk.requests.create') }}">Record a request</a>
     </div>

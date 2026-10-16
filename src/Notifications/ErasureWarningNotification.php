@@ -31,4 +31,13 @@ class ErasureWarningNotification extends DataRightsNotification
 
         return $this->withContact($message);
     }
+
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'type' => 'erasure_warning',
+            'erasure_due_at' => $this->erasureDueAt->toIso8601String(),
+        ];
+    }
 }

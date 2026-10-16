@@ -33,4 +33,15 @@ class NoticeNotification extends DataRightsNotification
 
         return $this->withContact($message);
     }
+
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'type' => 'notice',
+            'reference' => $this->notice->getKey(),
+            'version' => $this->notice->version,
+            'published_at' => $this->notice->published_at->toIso8601String(),
+        ];
+    }
 }

@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Schema;
 use Vipertecpro\DataRightsDesk\Enums\RequestType;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\ConsentRecord;
+use Vipertecpro\DataRightsDesk\Notifications\BreachNotification;
+use Vipertecpro\DataRightsDesk\Notifications\ErasureWarningNotification;
+use Vipertecpro\DataRightsDesk\Notifications\NoticeNotification;
+use Vipertecpro\DataRightsDesk\Notifications\RequestClosedNotification;
+use Vipertecpro\DataRightsDesk\Notifications\RequestReceivedNotification;
 use Vipertecpro\DataRightsDesk\Tests\Support\UsersSource;
 
 it('Minimisation: IP address and user agent are not stored unless turned on', function () {
@@ -63,4 +68,28 @@ it('Minimisation: only the age status is stored, never a birth date', function (
     expect($row['age_status'])->toBe('child')
         ->and(json_encode($row))->not->toContain('2012-03-04')->not->toContain('"14"')
         ->and(Schema::getColumnListing('data_rights_subjects'))->not->toContain('date_of_birth')->not->toContain('birth_date');
+});
+
+it('Minimisation: database notifications hold only the type, a reference and dates', function () {
+    $this->publishNotice();
+    $user = $this->makeUser('secret-person@example.com');
+    $request = DataRights::requests()->open(RequestType::Access, $user, 'My secret details', ['actor' => $user]);
+    DataRights::requests()->complete($request, 'Your private reply');
+    $breach = DataRights::breaches()->record(['nature' => 'Secret breach text', 'safety_steps' => 'Change your password']);
+
+    $payloads = [
+        (new NoticeNotification(DataRights::notices()->current('en')))->toArray($user),
+        (new RequestReceivedNotification($request))->toArray($user),
+        (new RequestClosedNotification($request->fresh()))->toArray($user),
+        (new BreachNotification($breach))->toArray($user),
+        (new ErasureWarningNotification(now()->addDays(2)))->toArray($user),
+    ];
+
+    foreach ($payloads as $payload) {
+        $json = json_encode($payload) ?: '';
+
+        expect($payload)->toHaveKey('type')
+            ->and($json)->not->toContain('secret')->not->toContain('Secret')->not->toContain('private')
+            ->not->toContain('password')->not->toContain('privacy@shop.example');
+    }
 });

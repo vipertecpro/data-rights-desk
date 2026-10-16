@@ -67,10 +67,11 @@
             <form method="POST" action="{{ route('data-rights-desk.requests.verify', $request) }}" class="drd-card">
                 @csrf
                 <h2>Check identity</h2>
-                <p class="drd-small drd-muted">Rule 14(1)(b): confirm the person is who they say, then record how you checked.</p>
+                <p class="drd-small drd-muted">Rule 14(2): the person asks using the particulars you require. Confirm she is who she says, then record how you checked.</p>
                 <div class="drd-field">
                     <label for="drd-method">How you checked</label>
-                    <input id="drd-method" type="text" name="method" required maxlength="120" placeholder="Reply from the registered email address">
+                    <input id="drd-method" type="text" name="method" required maxlength="120" placeholder="For example: answered a check sent to the account" aria-describedby="drd-method-help">
+                    <span id="drd-method-help" class="drd-help">Stored encrypted. Name the method only; leave out phone numbers, addresses and other contact details.</span>
                 </div>
                 <button type="submit" @class(['drd-button', 'drd-button--primary' => $request->type !== \Vipertecpro\DataRightsDesk\Enums\RequestType::Grievance])>Record identity check</button>
             </form>

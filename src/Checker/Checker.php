@@ -135,13 +135,13 @@ class Checker
     private function checkRequests(): void
     {
         if ((int) config('data-rights.requests.response_days', Limits::MAX_RESPONSE_DAYS) > Limits::MAX_RESPONSE_DAYS) {
-            $this->error('response_days_over_90', 'Rule 14(3): requests.response_days is above 90. The package uses 90.');
+            $this->error('response_days_over_90', 'requests.response_days is above 90. Rule 14(3) sets 90 days for grievances, and the package uses 90 as its own ceiling for every request type, so it uses 90.');
         }
 
         $overdue = DataRightsRequest::query()->overdue()->count();
 
         if ($overdue > 0) {
-            $this->error('requests_overdue', "Rule 14(3): {$overdue} open request(s) are past their due date.");
+            $this->error('requests_overdue', "{$overdue} open request(s) are past their due date (90 days at most: Rule 14(3) for grievances, the package's own ceiling for the other types).");
         }
     }
 

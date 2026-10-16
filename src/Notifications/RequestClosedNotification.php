@@ -46,4 +46,16 @@ class RequestClosedNotification extends DataRightsNotification
 
         return $this->withContact($message);
     }
+
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'type' => 'request_closed',
+            'reference' => $this->request->getKey(),
+            'request_type' => $this->request->type->value,
+            'status' => $this->request->status->value,
+            'closed_at' => $this->request->closed_at?->toIso8601String(),
+        ];
+    }
 }

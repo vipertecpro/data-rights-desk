@@ -27,4 +27,16 @@ class RequestReceivedNotification extends DataRightsNotification
 
         return $this->withContact($message);
     }
+
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'type' => 'request_received',
+            'reference' => $this->request->getKey(),
+            'request_type' => $this->request->type->value,
+            'received_at' => $this->request->received_at->toIso8601String(),
+            'due_at' => $this->request->due_at->toIso8601String(),
+        ];
+    }
 }

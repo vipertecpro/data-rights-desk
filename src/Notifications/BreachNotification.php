@@ -33,4 +33,14 @@ class BreachNotification extends DataRightsNotification
 
         return $message;
     }
+
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'type' => 'breach',
+            'reference' => $this->breach->getKey(),
+            'became_aware_at' => $this->breach->became_aware_at->toIso8601String(),
+        ];
+    }
 }

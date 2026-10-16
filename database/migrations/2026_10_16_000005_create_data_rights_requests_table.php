@@ -21,7 +21,7 @@ return new class extends Migration
             $table->timestamp('received_at');
             $table->timestamp('due_at');
             $table->timestamp('identity_verified_at')->nullable();
-            $table->string('identity_method', 120)->nullable();
+            $table->text('identity_method')->nullable();
             $table->timestamp('closed_at')->nullable();
             $table->timestamps();
 

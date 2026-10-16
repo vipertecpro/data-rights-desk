@@ -185,11 +185,20 @@ class RequestDesk
             ->get();
 
         $current = $this->consents->current($subject);
+        $history = $this->consents->history($subject);
         $personPurposes = [];
 
         foreach (array_keys($current) as $purpose) {
             if ($this->consents->allows($subject, $purpose)) {
                 $personPurposes[] = $purpose;
+            }
+        }
+
+        // s.11(1)(b): sharing that already happened counts, so every purpose she
+        // ever gave consent to is included, not only the ones she allows today.
+        foreach ($history as $record) {
+            if ($record->isGiven()) {
+                $personPurposes[] = $record->purpose;
             }
         }
 
@@ -232,7 +241,7 @@ class RequestDesk
             ])->values()->all(),
             'consents' => [
                 'current' => $current,
-                'history' => $this->consents->history($subject)->map(fn ($record): array => [
+                'history' => $history->map(fn ($record): array => [
                     'purpose' => $record->purpose,
                     'action' => $record->action->value,
                     'channel' => $record->channel->value,

@@ -68,6 +68,7 @@ class DataRightsRequest extends Model
             'channel' => RequestChannel::class,
             'details' => 'encrypted',
             'response' => 'encrypted',
+            'identity_method' => 'encrypted',
             'result' => 'array',
             'received_at' => 'datetime',
             'due_at' => 'datetime',
