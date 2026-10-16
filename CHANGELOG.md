@@ -17,6 +17,7 @@ All notable changes to this package are written here. It follows Semantic Versio
 
 ### Fixed
 
+- **Checker**: a name column alone (`name`, `first_name`, `last_name`, `full_name`) no longer counts as personal data. It counts on your users table, or next to an email, phone, address, IP or similar column in the same table. Products, tags and categories are no longer flagged.
 - **SQL Server**: the `created_at` column of `data_rights_consents` now keeps microseconds like `occurred_at`. SQL Server refused the old column type. This applies to new installs. Apps already on 1.0 with SQLite, MySQL, MariaDB or PostgreSQL need nothing.
 
 ## 1.0.0 - 2026-10-16
