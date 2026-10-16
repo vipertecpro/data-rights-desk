@@ -10,7 +10,8 @@ use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 
 /**
  * data-rights.activity: Rule 8(1)-(2). Notes when the person was last seen
- * (at most once a day) and clears a pending erasure warning.
+ * (at most once a day), clears a pending erasure warning, and clears a past
+ * erasure when an erased person whose account was kept comes back.
  */
 class RecordActivity
 {
@@ -21,12 +22,11 @@ class RecordActivity
         if ($user instanceof Model) {
             $profile = SubjectProfile::for($user);
 
-            if ($profile->last_seen_at === null || ! $profile->last_seen_at->isToday() || $profile->erasure_warned_at !== null) {
-                $profile->forceFill([
-                    'last_seen_at' => now(),
-                    'erasure_warned_at' => null,
-                    'erasure_due_at' => null,
-                ])->save();
+            if ($profile->last_seen_at === null
+                || ! $profile->last_seen_at->isToday()
+                || $profile->erasure_warned_at !== null
+                || $profile->erased_at !== null) {
+                SubjectProfile::markActive($user);
             }
         }
 

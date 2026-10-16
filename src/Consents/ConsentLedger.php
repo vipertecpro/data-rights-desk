@@ -16,6 +16,7 @@ use Vipertecpro\DataRightsDesk\Exceptions\NoticeMissing;
 use Vipertecpro\DataRightsDesk\Models\ConsentRecord;
 use Vipertecpro\DataRightsDesk\Models\GuardianConsent;
 use Vipertecpro\DataRightsDesk\Models\Notice;
+use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 use Vipertecpro\DataRightsDesk\Notices\NoticeRepository;
 use Vipertecpro\DataRightsDesk\Purposes\PurposeRegistry;
 use Vipertecpro\DataRightsDesk\Support\Languages;
@@ -52,7 +53,14 @@ class ConsentLedger
             throw NoticeMissing::forLocale($locale);
         }
 
-        return $this->record($subject, $definition, ConsentAction::Given, $notice, $locale, $options);
+        $record = $this->record($subject, $definition, ConsentAction::Given, $notice, $locale, $options);
+
+        // Giving consent is the person approaching the Data Fiduciary (Rule 8(1)); an import is not.
+        if (! in_array($record->channel, [ConsentChannel::Import, ConsentChannel::Legacy], true)) {
+            SubjectProfile::markActive($subject);
+        }
+
+        return $record;
     }
 
     /**

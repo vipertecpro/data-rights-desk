@@ -88,18 +88,37 @@ class LegalHold extends Model
             ->exists();
     }
 
-    /**
-     * Keys of held records of one morph class.
-     *
-     * @return list<string>
-     */
-    public static function heldKeys(string $morphClass): array
+    /** True when an active hold covers the record with this morph class and key. */
+    public static function coversKey(string $morphClass, int|string $key): bool
     {
         return static::query()->active()
             ->where('holdable_type', $morphClass)
-            ->pluck('holdable_id')
-            ->map(fn (mixed $id): string => (string) $id)
-            ->values()
-            ->all();
+            ->where('holdable_id', (string) $key)
+            ->exists();
+    }
+
+    /**
+     * The keys, among the given ones, of records of one morph class that are held.
+     * Callers pass one chunk at a time, so the list stays small.
+     *
+     * @param  array<int, int|string>  $keys
+     * @return array<string, true>
+     */
+    public static function heldAmong(string $morphClass, array $keys): array
+    {
+        if ($keys === []) {
+            return [];
+        }
+
+        $held = [];
+
+        foreach (static::query()->active()
+            ->where('holdable_type', $morphClass)
+            ->whereIn('holdable_id', array_map(fn (int|string $key): string => (string) $key, $keys))
+            ->pluck('holdable_id') as $id) {
+            $held[(string) $id] = true;
+        }
+
+        return $held;
     }
 }

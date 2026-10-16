@@ -30,6 +30,11 @@ trait HasDataRights
 
         static::deleted($markErased);
         static::registerModelEvent('forceDeleted', $markErased);
+
+        // A soft-deleted person who is restored is no longer erased.
+        static::registerModelEvent('restored', function (Model $model): void {
+            SubjectProfile::clearErasure($model);
+        });
     }
 
     /** @return MorphMany<ConsentRecord, $this> */

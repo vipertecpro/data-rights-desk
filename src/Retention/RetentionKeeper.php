@@ -4,6 +4,7 @@ namespace Vipertecpro\DataRightsDesk\Retention;
 
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
@@ -11,6 +12,7 @@ use Vipertecpro\DataRightsDesk\Concerns\HasRetention;
 use Vipertecpro\DataRightsDesk\Enums\ErasureReason;
 use Vipertecpro\DataRightsDesk\Enums\RequestStatus;
 use Vipertecpro\DataRightsDesk\Events\ErasureWarningSent;
+use Vipertecpro\DataRightsDesk\Models\Breach;
 use Vipertecpro\DataRightsDesk\Models\BreachSubject;
 use Vipertecpro\DataRightsDesk\Models\ConsentRecord;
 use Vipertecpro\DataRightsDesk\Models\DataRightsRequest;
@@ -27,6 +29,7 @@ use Vipertecpro\DataRightsDesk\Requests\RequestDesk;
 use Vipertecpro\DataRightsDesk\Support\Languages;
 use Vipertecpro\DataRightsDesk\Support\Limits;
 use Vipertecpro\DataRightsDesk\Support\RetentionReport;
+use Vipertecpro\DataRightsDesk\Support\Sources;
 use Vipertecpro\DataRightsDesk\Support\Subjects;
 
 /**
@@ -36,14 +39,18 @@ use Vipertecpro\DataRightsDesk\Support\Subjects;
  * 2. processing logs older than keep_days;
  * 3. app models using HasRetention;
  * 4. inactivity erasure (Rule 8(1)-(2), Third Schedule), only when enabled;
- * 5. package records of people erased more than keep_days ago;
+ * 5. package records of people erased more than keep_days ago, dated on or
+ *    before the erasure (anything newer belongs to a person who came back);
  * 6. requests closed more than keep_days ago;
  * 7. a record of the run, with counts only.
  *
- * Legal holds always win. --pretend counts and changes nothing.
+ * Legal holds always win. --pretend counts and changes nothing. Every step
+ * works a chunk at a time, so no list of ids grows with the number of people.
  */
 class RetentionKeeper
 {
+    private const CHUNK = 500;
+
     public function __construct(private RequestDesk $requests) {}
 
     public function run(bool $pretend = false): RetentionReport
@@ -54,7 +61,7 @@ class RetentionKeeper
         $counts = [];
         $models = [];
 
-        $counts['processing_logs'] = $this->processingLogs($cutoff, $pretend);
+        $counts['processing_logs'] = $this->deleteUnlessHeld(ProcessingLog::query()->where('occurred_at', '<', $cutoff), $pretend);
 
         foreach ((array) config('data-rights.retention.models', []) as $class) {
             if (is_string($class) && class_exists($class) && in_array(HasRetention::class, class_uses_recursive($class), true)) {
@@ -67,7 +74,10 @@ class RetentionKeeper
         [$counts['inactivity_warned'], $counts['inactivity_erased']] = $this->inactivity($pretend);
 
         $counts['erased_people_records'] = $this->erasedPeopleRecords($cutoff, $pretend);
-        $counts['closed_requests'] = $this->closedRequests($cutoff, $pretend);
+        $counts['closed_requests'] = $this->deleteUnlessHeld(
+            $this->closedRequestsQuery()->whereNotNull('closed_at')->where('closed_at', '<', $cutoff),
+            $pretend,
+        );
 
         $report = new RetentionReport($pretend, $keepDays, $counts, $models);
 
@@ -104,17 +114,8 @@ class RetentionKeeper
         return $hold;
     }
 
-    /** Step 2. */
-    private function processingLogs(CarbonInterface $cutoff, bool $pretend): int
-    {
-        $query = ProcessingLog::query()->where('occurred_at', '<', $cutoff);
-        $this->excludeHeldSubjects($query);
-
-        return $pretend ? $query->count() : (int) $query->delete();
-    }
-
     /**
-     * Step 3.
+     * Step 3. A hold on the person does not cover these records: hold the records themselves.
      *
      * @param  class-string<Model>  $class
      */
@@ -130,21 +131,21 @@ class RetentionKeeper
             return 0;
         }
 
-        $held = LegalHold::heldKeys($model->getMorphClass());
-
-        if ($held !== []) {
-            $query->whereNotIn($model->getQualifiedKeyName(), $held);
-        }
-
-        if ($pretend) {
-            return $query->count();
-        }
-
         $count = 0;
+        $morphClass = $model->getMorphClass();
 
-        $query->chunkById(200, function ($records) use (&$count): void {
+        $query->chunkById(self::CHUNK, function (Collection $records) use ($morphClass, $pretend, &$count): void {
+            $held = LegalHold::heldAmong($morphClass, $records->modelKeys());
+
             foreach ($records as $record) {
-                $this->call($record, 'eraseForRetention');
+                if (isset($held[(string) $record->getKey()])) {
+                    continue;
+                }
+
+                if (! $pretend) {
+                    $this->call($record, 'eraseForRetention');
+                }
+
                 $count++;
             }
         }, $model->getKeyName());
@@ -192,25 +193,7 @@ class RetentionKeeper
 
         $model = new $class;
         $morphClass = $model->getMorphClass();
-
-        // People seen recently, already warned, or already erased are skipped.
-        $skip = SubjectProfile::query()
-            ->where('subject_type', $morphClass)
-            ->where(fn (Builder $q) => $q->where('last_seen_at', '>', $lastSeenCutoff)
-                ->orWhereNotNull('erasure_warned_at')
-                ->orWhereNotNull('erased_at'))
-            ->pluck('subject_id')
-            ->map(fn (mixed $id): string => (string) $id)
-            ->merge(LegalHold::heldKeys($morphClass))
-            ->unique()
-            ->values()
-            ->all();
-
         $query = $class::query();
-
-        if ($skip !== []) {
-            $query->whereNotIn($model->getQualifiedKeyName(), $skip);
-        }
 
         // Signing up is approaching the Data Fiduciary too.
         $createdColumn = $model->usesTimestamps() ? $model->getCreatedAtColumn() : null;
@@ -220,15 +203,37 @@ class RetentionKeeper
                 ->orWhere($model->qualifyColumn($createdColumn), '<=', $lastSeenCutoff));
         }
 
-        if ($pretend) {
-            return $query->count();
-        }
-
         $warned = 0;
 
-        $query->chunkById(200, function ($subjects) use ($years, $warningHours, $countingFrom, $createdColumn, &$warned): void {
+        $query->chunkById(self::CHUNK, function (Collection $subjects) use ($morphClass, $years, $warningHours, $countingFrom, $createdColumn, $lastSeenCutoff, $pretend, &$warned): void {
+            $keys = $subjects->modelKeys();
+            $held = LegalHold::heldAmong($morphClass, $keys);
+            $profiles = SubjectProfile::query()
+                ->where('subject_type', $morphClass)
+                ->whereIn('subject_id', $keys)
+                ->get()
+                ->keyBy(fn (SubjectProfile $profile): string => (string) $profile->subject_id);
+
             foreach ($subjects as $subject) {
-                $profile = SubjectProfile::for($subject);
+                $key = (string) $subject->getKey();
+                $profile = $profiles->get($key);
+
+                // People seen recently, already warned, already erased, or on legal hold are skipped.
+                if (isset($held[$key]) || ($profile !== null && (
+                    $profile->erasure_warned_at !== null
+                    || $profile->erased_at !== null
+                    || ($profile->last_seen_at !== null && $profile->last_seen_at->greaterThan($lastSeenCutoff))
+                ))) {
+                    continue;
+                }
+
+                $warned++;
+
+                if ($pretend) {
+                    continue;
+                }
+
+                $profile ??= SubjectProfile::for($subject);
                 $clock = Carbon::instance($countingFrom);
 
                 foreach ([$profile->last_seen_at, $createdColumn !== null ? $subject->getAttribute($createdColumn) : null] as $candidate) {
@@ -239,7 +244,7 @@ class RetentionKeeper
 
                 // Third Schedule: three years from the last approach, or the commencement of the Rules, whichever is latest.
                 $mark = $clock->copy()->addYears($years);
-                $dueAt = $mark->greaterThan(now()->addHours($warningHours)) ? $mark : now()->addHours($warningHours);
+                $dueAt = $mark->greaterThan(now()->addHours($warningHours)) ? $mark : Carbon::instance(now()->addHours($warningHours));
 
                 $profile->forceFill([
                     'erasure_warned_at' => now(),
@@ -248,7 +253,6 @@ class RetentionKeeper
 
                 Subjects::notify($subject, (new ErasureWarningNotification($dueAt))->locale(Languages::resolve(Subjects::locale($subject))));
                 event(new ErasureWarningSent($subject, $dueAt));
-                $warned++;
             }
         }, $model->getKeyName());
 
@@ -257,6 +261,11 @@ class RetentionKeeper
 
     private function eraseInactive(int $warningHours, bool $pretend): int
     {
+        // Without an Eraser nothing would be erased, so nobody is marked erased.
+        if (Sources::erasers() === []) {
+            return 0;
+        }
+
         $query = SubjectProfile::query()
             ->whereNull('erased_at')
             ->whereNotNull('erasure_warned_at')
@@ -270,144 +279,183 @@ class RetentionKeeper
 
         $erased = 0;
 
-        foreach ($query->get() as $profile) {
-            $subject = Subjects::find($profile->subject_type, $profile->subject_id);
+        $query->chunkById(self::CHUNK, function (Collection $profiles) use (&$erased): void {
+            foreach ($profiles as $profile) {
+                $subject = Subjects::find($profile->subject_type, $profile->subject_id);
 
-            if ($subject === null) {
-                $profile->forceFill(['erased_at' => now()])->save();
+                if ($subject === null) {
+                    $profile->forceFill(['erased_at' => now()])->save();
 
-                continue;
+                    continue;
+                }
+
+                $report = $this->requests->eraseSubject($subject, ErasureReason::Inactivity);
+                $erased += $report->held ? 0 : 1;
             }
-
-            $report = $this->requests->eraseSubject($subject, ErasureReason::Inactivity);
-            $erased += $report->held ? 0 : 1;
-        }
+        });
 
         return $erased;
     }
 
-    /** Step 5. */
+    /**
+     * Step 5: the package records of a person erased more than keep_days ago.
+     * Only rows dated on or before the erasure go: a person whose account was
+     * kept (Third Schedule (a)) or restored can come back, and her newer
+     * records stay. The profile goes last, and only when nothing newer is left.
+     */
     private function erasedPeopleRecords(CarbonInterface $cutoff, bool $pretend): int
     {
-        $profiles = SubjectProfile::query()
-            ->whereNotNull('erased_at')
-            ->where('erased_at', '<', $cutoff)
-            ->get(['id', 'subject_type', 'subject_id']);
-
         $count = 0;
 
-        foreach ($profiles as $profile) {
-            if (in_array((string) $profile->subject_id, LegalHold::heldKeys($profile->subject_type), true)) {
-                continue;
-            }
+        SubjectProfile::query()
+            ->whereNotNull('erased_at')
+            ->where('erased_at', '<', $cutoff)
+            ->chunkById(self::CHUNK, function (Collection $profiles) use ($pretend, &$count): void {
+                foreach ($profiles as $profile) {
+                    if (LegalHold::coversKey($profile->subject_type, $profile->subject_id) || $profile->erased_at === null) {
+                        continue;
+                    }
 
-            $scope = fn (Builder $query): Builder => $query
-                ->where('subject_type', $profile->subject_type)
-                ->where('subject_id', $profile->subject_id);
-
-            $queries = [
-                $scope(ConsentRecord::query()),
-                $scope(NoticeDelivery::query()),
-                $scope(Nomination::query()),
-                $scope(GuardianConsent::query()),
-                $scope(ProcessingLog::query()),
-                $scope(BreachSubject::query()),
-            ];
-
-            $requests = $scope(DataRightsRequest::query())
-                ->whereIn('status', array_map(fn (RequestStatus $s): string => $s->value, RequestStatus::closed()));
-
-            $heldRequests = LegalHold::heldKeys((new DataRightsRequest)->getMorphClass());
-
-            if ($heldRequests !== []) {
-                $requests->whereNotIn('id', $heldRequests);
-            }
-
-            if ($pretend) {
-                foreach ($queries as $query) {
-                    $count += $query->count();
+                    $count += $this->eraseRecordsUpTo($profile, $profile->erased_at, $pretend);
                 }
-
-                $count += $requests->count() + 1;
-
-                continue;
-            }
-
-            ConsentRecord::withRetentionDeletes(function () use ($queries, $requests, &$count): void {
-                foreach ($queries as $query) {
-                    $count += (int) $query->delete();
-                }
-
-                $count += $this->deleteRequests($requests);
             });
 
-            // The profile itself (age status, activity and erasure dates) goes last.
+        return $count;
+    }
+
+    private function eraseRecordsUpTo(SubjectProfile $profile, CarbonInterface $erasedAt, bool $pretend): int
+    {
+        // Timestamps are compared to the second, so take everything up to the end of that second.
+        $until = Carbon::instance($erasedAt)->addSecond();
+
+        $scope = fn (Builder $query): Builder => $query
+            ->where('subject_type', $profile->subject_type)
+            ->where('subject_id', $profile->subject_id);
+
+        $queries = [
+            $scope(ConsentRecord::query())->where('occurred_at', '<', $until),
+            $scope(NoticeDelivery::query())->where('delivered_at', '<', $until),
+            $scope(Nomination::query())->where(fn (Builder $q) => $q->whereNull('created_at')->orWhere('created_at', '<', $until)),
+            $scope(GuardianConsent::query())->where('verified_at', '<', $until),
+            $scope(ProcessingLog::query())->where('occurred_at', '<', $until),
+            $scope(BreachSubject::query())->whereIn('breach_id', Breach::query()->where('became_aware_at', '<', $until)->select('id')),
+        ];
+
+        $requests = $scope($this->closedRequestsQuery())->where('received_at', '<', $until);
+
+        if ($pretend) {
+            $count = array_sum(array_map(fn (Builder $query): int => $query->count(), $queries));
+
+            return $count + $this->deleteUnlessHeld($requests, true);
+        }
+
+        $count = ConsentRecord::withRetentionDeletes(function () use ($queries): int {
+            return array_sum(array_map(fn (Builder $query): int => (int) $query->delete(), $queries));
+        });
+
+        $count += $this->deleteUnlessHeld($requests, false);
+
+        if (! $this->hasRecords($profile)) {
             $count += (int) SubjectProfile::query()->whereKey($profile->getKey())->delete();
         }
 
         return $count;
     }
 
-    /** Step 6. */
-    private function closedRequests(CarbonInterface $cutoff, bool $pretend): int
+    /** True when any package record of this person is left. */
+    private function hasRecords(SubjectProfile $profile): bool
     {
-        $query = DataRightsRequest::query()
-            ->whereIn('status', array_map(fn (RequestStatus $s): string => $s->value, RequestStatus::closed()))
-            ->whereNotNull('closed_at')
-            ->where('closed_at', '<', $cutoff);
-
-        $held = LegalHold::heldKeys((new DataRightsRequest)->getMorphClass());
-
-        if ($held !== []) {
-            $query->whereNotIn('id', $held);
+        foreach ([ConsentRecord::class, NoticeDelivery::class, Nomination::class, GuardianConsent::class, ProcessingLog::class, BreachSubject::class, DataRightsRequest::class] as $class) {
+            if ($class::query()->where('subject_type', $profile->subject_type)->where('subject_id', $profile->subject_id)->exists()) {
+                return true;
+            }
         }
 
-        $this->excludeHeldSubjects($query);
+        return false;
+    }
 
-        return $pretend ? $query->count() : $this->deleteRequests($query);
+    /** @return Builder<DataRightsRequest> */
+    private function closedRequestsQuery(): Builder
+    {
+        return DataRightsRequest::query()
+            ->whereIn('status', array_map(fn (RequestStatus $s): string => $s->value, RequestStatus::closed()));
     }
 
     /**
-     * Deletes requests and their events, without relying on a database cascade.
+     * Deletes (or counts) the rows of a package table a chunk at a time, leaving
+     * out rows whose subject is on legal hold and requests that are held
+     * themselves. Requests take their events with them.
      *
-     * @param  Builder<DataRightsRequest>  $requests
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
      */
-    private function deleteRequests(Builder $requests): int
+    private function deleteUnlessHeld(Builder $query, bool $pretend): int
     {
+        $model = $query->getModel();
+        $isRequest = $model instanceof DataRightsRequest;
+        $requestMorph = (new DataRightsRequest)->getMorphClass();
         $count = 0;
 
-        $requests->clone()->select('id')->chunkById(500, function ($chunk) use (&$count): void {
-            $ids = $chunk->modelKeys();
-            RequestEvent::query()->whereIn('request_id', $ids)->delete();
-            $count += (int) DataRightsRequest::query()->whereKey($ids)->delete();
-        });
+        $query->clone()
+            ->select([$model->getQualifiedKeyName(), $model->qualifyColumn('subject_type'), $model->qualifyColumn('subject_id')])
+            ->chunkById(self::CHUNK, function (Collection $rows) use ($model, $isRequest, $requestMorph, $pretend, &$count): void {
+                $heldSubjects = $this->heldSubjects($rows);
+                $heldRequests = $isRequest ? LegalHold::heldAmong($requestMorph, $rows->modelKeys()) : [];
+
+                $ids = $rows
+                    ->reject(fn (Model $row): bool => isset($heldSubjects[$row->getAttribute('subject_type').'|'.$row->getAttribute('subject_id')])
+                        || isset($heldRequests[(string) $row->getKey()]))
+                    ->modelKeys();
+
+                if ($ids === []) {
+                    return;
+                }
+
+                if ($pretend) {
+                    $count += count($ids);
+
+                    return;
+                }
+
+                if ($isRequest) {
+                    RequestEvent::query()->whereIn('request_id', $ids)->delete();
+                }
+
+                $count += (int) $model->newQuery()->whereKey($ids)->delete();
+            }, $model->getKeyName());
 
         return $count;
+    }
+
+    /**
+     * The subjects in one chunk of rows that are on legal hold, as "type|id" keys.
+     *
+     * @param  Collection<int, covariant Model>  $rows
+     * @return array<string, true>
+     */
+    private function heldSubjects(Collection $rows): array
+    {
+        $held = [];
+
+        foreach ($rows->groupBy(fn (Model $row): string => (string) $row->getAttribute('subject_type')) as $type => $group) {
+            if ($type === '') {
+                continue;
+            }
+
+            $keys = $group->map(fn (Model $row): string => (string) $row->getAttribute('subject_id'))->unique()->values()->all();
+
+            foreach (LegalHold::heldAmong($type, $keys) as $key => $true) {
+                $held[$type.'|'.$key] = true;
+            }
+        }
+
+        return $held;
     }
 
     /** Calls a HasRetention method; the trait's methods are not on the Model type. */
     private function call(Model $model, string $method, mixed ...$arguments): mixed
     {
         return $model->{$method}(...$arguments);
-    }
-
-    /**
-     * Leaves out rows whose subject is on legal hold, one morph class at a time.
-     *
-     * @template TModel of Model
-     *
-     * @param  Builder<TModel>  $query
-     */
-    private function excludeHeldSubjects(Builder $query): void
-    {
-        $held = LegalHold::query()->active()->get(['holdable_type', 'holdable_id'])->groupBy('holdable_type');
-
-        foreach ($held as $type => $holds) {
-            $ids = $holds->pluck('holdable_id')->map(fn (mixed $id): string => (string) $id)->all();
-
-            $query->where(fn (Builder $q) => $q->whereNull('subject_type')
-                ->orWhere('subject_type', '!=', $type)
-                ->orWhereNotIn('subject_id', $ids));
-        }
     }
 }

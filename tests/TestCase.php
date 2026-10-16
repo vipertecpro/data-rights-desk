@@ -77,6 +77,7 @@ abstract class TestCase extends Orchestra
             $table->string('email')->unique();
             $table->string('password')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('orders', function (Blueprint $table): void {

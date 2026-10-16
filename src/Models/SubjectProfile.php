@@ -75,4 +75,28 @@ class SubjectProfile extends Model
     {
         return static::query()->forSubject($subject)->first();
     }
+
+    /**
+     * The person approached the Data Fiduciary again (Rule 8(1)-(2)): note when,
+     * clear a pending erasure warning, and clear a past erasure so the keeper
+     * does not treat her new records as those of an erased person.
+     */
+    public static function markActive(Model $subject): self
+    {
+        $profile = static::for($subject);
+        $profile->forceFill([
+            'last_seen_at' => now(),
+            'erasure_warned_at' => null,
+            'erasure_due_at' => null,
+            'erased_at' => null,
+        ])->save();
+
+        return $profile;
+    }
+
+    /** The person's record is back (for example a soft-deleted user was restored). */
+    public static function clearErasure(Model $subject): void
+    {
+        static::query()->forSubject($subject)->whereNotNull('erased_at')->update(['erased_at' => null]);
+    }
 }

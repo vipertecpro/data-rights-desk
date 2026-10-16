@@ -1,9 +1,13 @@
 <?php
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Vipertecpro\DataRightsDesk\Enums\AgeStatus;
 use Vipertecpro\DataRightsDesk\Enums\RequestType;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
+use Vipertecpro\DataRightsDesk\Models\BreachSubject;
 use Vipertecpro\DataRightsDesk\Models\ConsentRecord;
 use Vipertecpro\DataRightsDesk\Models\DataRightsRequest;
 use Vipertecpro\DataRightsDesk\Models\Nomination;
@@ -12,6 +16,8 @@ use Vipertecpro\DataRightsDesk\Models\RequestEvent;
 use Vipertecpro\DataRightsDesk\Models\RetentionRun;
 use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 use Vipertecpro\DataRightsDesk\Tests\Support\Order;
+use Vipertecpro\DataRightsDesk\Tests\Support\SoftUser;
+use Vipertecpro\DataRightsDesk\Tests\Support\UsersSource;
 
 beforeEach(function () {
     $this->user = $this->makeUser();
@@ -107,7 +113,7 @@ it('Rule 8(3): records of people erased more than keep_days ago and old closed r
     $otherRequest = DataRights::requests()->open(RequestType::Grievance, $other, null);
     DataRights::requests()->reject($otherRequest, 'Not ours.');
 
-    SubjectProfile::for($this->user)->forceFill(['erased_at' => now()->subDays(10)])->save();
+    SubjectProfile::for($this->user)->forceFill(['erased_at' => now()])->save();
     expect(DataRights::retention()->run()->count('erased_people_records'))->toBe(0);
 
     $this->travel(400)->days();
@@ -137,4 +143,78 @@ it('Rule 8(3): --pretend changes nothing and every run is recorded with counts',
         ->and(RetentionRun::query()->count())->toBe(2)
         ->and(RetentionRun::query()->where('pretend', true)->value('summary')['counts'])->toHaveKey('processing_logs')
         ->and(json_encode(DB::table('data_rights_retention_runs')->pluck('summary')))->not->toContain('person@example.com');
+});
+
+it('Rule 8(3): a person who comes back after inactivity erasure keeps her new records and her age answer', function () {
+    config()->set('data-rights.sources', [UsersSource::class]);
+    config()->set('data-rights.retention.inactivity.enabled', true);
+    Notification::fake();
+    $this->travelTo(Carbon::parse('2025-01-01 09:00:00'));
+    $person = $this->makeUser('returning@example.com');
+    DataRights::children()->recordAge($person, true);
+
+    $this->travelTo(Carbon::parse('2028-11-11 06:00:00'));
+    DataRights::retention()->run();
+    $this->travelTo(Carbon::parse('2028-11-13 07:00:00'));
+    DataRights::retention()->run();
+    expect(SubjectProfile::lookup($person)->erased_at)->not->toBeNull();
+
+    // The account was kept (Third Schedule (a)), and she signs in again.
+    $this->travelTo(Carbon::parse('2028-11-20 10:00:00'));
+    $this->actingAs($person)->get('/home')->assertOk();
+    expect(SubjectProfile::lookup($person)->erased_at)->toBeNull();
+
+    $this->publishNotice();
+    DataRights::give($person, 'marketing');
+
+    $this->travelTo(Carbon::parse('2030-01-01 10:00:00'));
+    DataRights::retention()->run();
+
+    expect(DataRights::allows($person, 'marketing'))->toBeTrue()
+        ->and(SubjectProfile::lookup($person)?->age_status)->toBe(AgeStatus::Adult)
+        ->and(ConsentRecord::query()->count())->toBe(1);
+});
+
+it('Rule 8(3): the keeper deletes only the records dated on or before the erasure', function () {
+    $this->publishNotice();
+    DataRights::give($this->user, 'marketing');
+    SubjectProfile::for($this->user)->forceFill(['erased_at' => now()])->save();
+
+    // A record that arrives after the erasure, without the person coming back.
+    $this->travel(2)->days();
+    $breach = DataRights::breaches()->record(['nature' => 'Lost laptop']);
+    DataRights::breaches()->addAffected($breach, [$this->user]);
+
+    $this->travel(400)->days();
+    DataRights::retention()->run();
+
+    expect(ConsentRecord::query()->count())->toBe(0)
+        ->and(BreachSubject::query()->count())->toBe(1)
+        ->and(SubjectProfile::lookup($this->user))->not->toBeNull();
+
+    // Once nothing newer is left, the profile goes too.
+    BreachSubject::query()->delete();
+    DataRights::retention()->run();
+
+    expect(SubjectProfile::lookup($this->user))->toBeNull();
+});
+
+it('Rule 8(3): consent, a new request or a restore clears a past erasure', function () {
+    $this->publishNotice();
+    $mark = fn () => SubjectProfile::for($this->user)->forceFill(['erased_at' => now()])->save();
+
+    $mark();
+    DataRights::give($this->user, 'marketing');
+    expect(SubjectProfile::lookup($this->user)->erased_at)->toBeNull();
+
+    $mark();
+    DataRights::requests()->open(RequestType::Grievance, $this->user, null);
+    expect(SubjectProfile::lookup($this->user)->erased_at)->toBeNull();
+
+    $soft = SoftUser::query()->create(['name' => 'Soft', 'email' => 'soft@example.com']);
+    $soft->delete();
+    expect(SubjectProfile::lookup($soft)->erased_at)->not->toBeNull();
+
+    $soft->restore();
+    expect(SubjectProfile::lookup($soft)->erased_at)->toBeNull();
 });

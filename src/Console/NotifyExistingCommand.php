@@ -3,6 +3,7 @@
 namespace Vipertecpro\DataRightsDesk\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Vipertecpro\DataRightsDesk\Enums\DeliveryChannel;
 use Vipertecpro\DataRightsDesk\Models\Notice;
@@ -50,45 +51,32 @@ class NotifyExistingCommand extends Command
         $pretend = (bool) $this->option('pretend');
         $model = new $class;
 
-        $delivered = NoticeDelivery::query()
-            ->where('subject_type', $model->getMorphClass())
-            ->whereIn('notice_id', Notice::query()->where('version', $version)->select('id'))
-            ->pluck('subject_id')
-            ->map(fn (mixed $id): string => (string) $id)
-            ->all();
-
+        $morphClass = $model->getMorphClass();
+        $noticeIds = Notice::query()->where('version', $version)->pluck('id')->all();
         $query = $class::query();
 
         if ($model->usesTimestamps() && $model->getCreatedAtColumn() !== null) {
             $query->where($model->qualifyColumn($model->getCreatedAtColumn()), '<', $before);
         }
 
-        if ($delivered !== []) {
-            $query->whereNotIn($model->getQualifiedKeyName(), $delivered);
-        }
-
-        // People whose data was erased are not contacted again.
-        $erased = SubjectProfile::query()
-            ->where('subject_type', $model->getMorphClass())
-            ->whereNotNull('erased_at')
-            ->pluck('subject_id')
-            ->map(fn (mixed $id): string => (string) $id)
-            ->all();
-
-        if ($erased !== []) {
-            $query->whereNotIn($model->getQualifiedKeyName(), $erased);
-        }
-
-        if ($pretend) {
-            $this->info('Pretend: '.$query->count()." people would get notice version {$version}.");
-
-            return self::SUCCESS;
-        }
-
         $sent = 0;
 
-        $query->chunkById($chunk, function ($subjects) use ($notices, &$sent): void {
+        // One chunk at a time: who already has this version, and who was erased, is
+        // looked up for the chunk's people only, so nothing grows with the user count.
+        $query->chunkById($chunk, function (Collection $subjects) use ($notices, $morphClass, $noticeIds, $pretend, &$sent): void {
+            $skip = $this->skipped($morphClass, $subjects->modelKeys(), $noticeIds);
+
             foreach ($subjects as $subject) {
+                if (isset($skip[(string) $subject->getKey()])) {
+                    continue;
+                }
+
+                if ($pretend) {
+                    $sent++;
+
+                    continue;
+                }
+
                 $locale = Languages::resolve(Subjects::locale($subject));
                 $notice = $notices->current($locale) ?? $notices->current();
 
@@ -116,8 +104,45 @@ class NotifyExistingCommand extends Command
             }
         }, $model->getKeyName());
 
+        if ($pretend) {
+            $this->info("Pretend: {$sent} people would get notice version {$version}.");
+
+            return self::SUCCESS;
+        }
+
         $this->info("Sent notice version {$version} to {$sent} people.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * People in this chunk who already have the current version, or whose data
+     * was erased (they are not contacted again).
+     *
+     * @param  array<int, int|string>  $keys
+     * @param  array<int, string>  $noticeIds
+     * @return array<string, true>
+     */
+    private function skipped(string $morphClass, array $keys, array $noticeIds): array
+    {
+        $skip = [];
+
+        $delivered = NoticeDelivery::query()
+            ->where('subject_type', $morphClass)
+            ->whereIn('subject_id', $keys)
+            ->whereIn('notice_id', $noticeIds)
+            ->pluck('subject_id');
+
+        $erased = SubjectProfile::query()
+            ->where('subject_type', $morphClass)
+            ->whereIn('subject_id', $keys)
+            ->whereNotNull('erased_at')
+            ->pluck('subject_id');
+
+        foreach ($delivered->merge($erased) as $id) {
+            $skip[(string) $id] = true;
+        }
+
+        return $skip;
     }
 }
