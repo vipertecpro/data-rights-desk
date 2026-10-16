@@ -168,10 +168,12 @@ class ConsentLedger
                 return false;
             }
 
-            // s.9(1), Rules 10-11: verifiable consent of the parent or lawful guardian first,
-            // for purposes that rest on consent (s.6) or on data the person gave (s.7(a)).
-            // Legitimate uses under s.7(b)-(i) do not depend on anyone's consent.
-            if ($kind !== null && ($definition->needsConsent() || $definition->canBeObjectedTo())) {
+            // s.9(1), Rules 10-11: "before processing any personal data of a child" the
+            // verifiable consent of the parent or lawful guardian comes first. That covers
+            // every purpose, legitimate uses included: the Fourth Schedule (Part B, item 2)
+            // has to exempt s.7(b) processing by name, so the package reads s.9(1) as
+            // applying to s.7 too. A purpose with a Fourth Schedule key is the way out.
+            if ($kind !== null) {
                 if ($this->children->activeGuardianConsent($subject, $kind) === null) {
                     return false;
                 }

@@ -143,7 +143,7 @@ it('Rule 12: a purpose with a Fourth Schedule key skips the checks for children'
         ->and(FourthSchedule::keys())->toBe(['A1', 'A2', 'A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6']);
 });
 
-it('s.9(1): legitimate uses under s.7(b) to (i) do not wait for a parent, but s.7(a) does', function () {
+it('s.9(1): for a child, legitimate uses also wait for a parent unless the purpose has a Fourth Schedule key', function () {
     config()->set('data-rights.purposes.emergency', [
         'title' => 'Medical emergency', 'description' => 'Helping in a medical emergency.', 'goods_or_services' => 'Emergency help',
         'data' => ['Name'], 'basis' => 'legitimate_use', 'legitimate_use' => 'f',
@@ -152,14 +152,20 @@ it('s.9(1): legitimate uses under s.7(b) to (i) do not wait for a parent, but s.
         'title' => 'Delivery', 'description' => 'Delivering orders.', 'goods_or_services' => 'Delivery',
         'data' => ['Address'], 'basis' => 'legitimate_use', 'legitimate_use' => 'a',
     ]);
+    config()->set('data-rights.purposes.scholarship', [
+        'title' => 'Scholarship', 'description' => 'A state scholarship.', 'goods_or_services' => 'Scholarship',
+        'data' => ['Name'], 'basis' => 'legitimate_use', 'legitimate_use' => 'b', 'fourth_schedule' => 'B2',
+    ]);
     DataRights::children()->recordAge($this->child, false);
 
-    expect(DataRights::allows($this->child, 'emergency'))->toBeTrue()
-        ->and(DataRights::allows($this->child, 'delivery'))->toBeFalse();
+    expect(DataRights::allows($this->child, 'emergency'))->toBeFalse()
+        ->and(DataRights::allows($this->child, 'delivery'))->toBeFalse()
+        ->and(DataRights::allows($this->child, 'scholarship'))->toBeTrue();
 
     DataRights::children()->recordGuardianConsent($this->child, new GuardianVerification(GuardianKind::Parent, GuardianMethod::VirtualToken));
 
-    expect(DataRights::allows($this->child, 'delivery'))->toBeTrue();
+    expect(DataRights::allows($this->child, 'emergency'))->toBeTrue()
+        ->and(DataRights::allows($this->child, 'delivery'))->toBeTrue();
 });
 
 it('s.9(1): the age answer is locked once given, and staff change it with a note', function () {

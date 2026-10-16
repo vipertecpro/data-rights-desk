@@ -194,7 +194,11 @@ if (DataRights::allows($user, 'marketing')) {
 DataRights::logProcessing($user, 'marketing', 'newsletter.sent');
 ```
 
-`allows()` answers per purpose. A consent purpose needs a "given" row as the latest entry. A legitimate use under section 7(b) to (i) is always allowed, and section 7(a) is allowed until the person says she does not want the use. For a person who has said she is under 18, a consent purpose or a section 7(a) use is not allowed until a parent has confirmed, and a tracking purpose stays denied even then. A purpose with a Fourth Schedule key skips these checks for children. `denies()` is the opposite. On your user model, `$user->consentsTo('marketing')` does the same.
+`allows()` answers per purpose. A consent purpose needs a "given" row as the latest entry. A legitimate use under section 7(b) to (i) is allowed, and section 7(a) is allowed until the person says she does not want the use.
+
+For a person who has said she is under 18, or who has a lawful guardian, no purpose is allowed until a parent or the guardian has confirmed. That includes legitimate uses. Section 9(1) asks for that consent "before processing any personal data of a child", and the Fourth Schedule has to exempt section 7(b) processing by name, so the package reads section 9(1) as covering every purpose. After the confirmation, a consent purpose also needs a "given" row from the parent, and a tracking purpose stays denied for a child. A purpose with a Fourth Schedule key skips these checks.
+
+`denies()` is the opposite. On your user model, `$user->consentsTo('marketing')` does the same.
 
 If you build your own screens, `DataRights::give($user, 'marketing', [...])` and `DataRights::withdraw(...)` write ledger rows. The options are `channel`, `locale`, `ip`, `user_agent`, `given_by` and `guardian_consent`. An unknown purpose throws `UnknownPurpose`. Giving consent without a published notice throws `NoticeMissing`. `DataRights::proof($user, 'marketing')` returns the proof as an array.
 
