@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Vipertecpro\DataRightsDesk\Enums\RequestChannel;
 use Vipertecpro\DataRightsDesk\Enums\RequestStatus;
 use Vipertecpro\DataRightsDesk\Enums\RequestType;
@@ -75,6 +76,18 @@ class DataRightsRequest extends Model
             'identity_verified_at' => 'datetime',
             'closed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * A request can be put on legal hold, so it is a morph target. Apps that call
+     * Relation::enforceMorphMap() rarely list package models: use the app's alias
+     * when there is one and the class name otherwise, instead of throwing.
+     */
+    public function getMorphClass(): string
+    {
+        $alias = array_search(static::class, Relation::morphMap(), true);
+
+        return is_string($alias) ? $alias : static::class;
     }
 
     /** @return HasMany<RequestEvent, $this> */

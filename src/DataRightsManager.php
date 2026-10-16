@@ -15,6 +15,7 @@ use Vipertecpro\DataRightsDesk\Models\GuardianConsent;
 use Vipertecpro\DataRightsDesk\Models\Notice;
 use Vipertecpro\DataRightsDesk\Models\NoticeDelivery;
 use Vipertecpro\DataRightsDesk\Models\ProcessingLog;
+use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 use Vipertecpro\DataRightsDesk\Nominations\NominationBook;
 use Vipertecpro\DataRightsDesk\Notices\NoticeRepository;
 use Vipertecpro\DataRightsDesk\Purposes\PurposeRegistry;
@@ -51,7 +52,8 @@ class DataRightsManager
     /**
      * Record the purposes ticked in <x-data-rights::consent-fields> (or your own form that posts
      * data_rights[purposes][] and data_rights[notice]), against the notice version the form showed.
-     * Pass the request, or the input array a Fortify action such as CreateNewUser receives.
+     * Pass the request, or the input array a Fortify action such as CreateNewUser receives. With
+     * data_rights[age] ("adult" or "child") the age answer is recorded first. Unknown purposes are ignored.
      *
      * @param  Request|array<string, mixed>  $input
      * @return list<ConsentRecord>
@@ -64,6 +66,14 @@ class DataRightsManager
         $purposes = array_values(array_filter((array) ($form['purposes'] ?? []), 'is_string'));
         $notice = $form['notice'] ?? null;
         $locale = $form['locale'] ?? null;
+        $age = $form['age'] ?? null;
+
+        // s.9(1): the age answer from <x-data-rights::consent-fields ask-age> comes first, so a
+        // child's own ticks are not recorded as consent. An answer already given is kept.
+        if (in_array($age, ['adult', 'child'], true) && $this->children()->enabled()
+            && SubjectProfile::for($subject)->age_status === null) {
+            $this->children()->recordAge($subject, $age === 'adult');
+        }
 
         return $this->consents()->giveMany($subject, $purposes, array_filter([
             'channel' => ConsentChannel::Web,

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Vipertecpro\DataRightsDesk\Support\Morphs;
 
 return new class extends Migration
 {
@@ -10,10 +11,10 @@ return new class extends Migration
     {
         Schema::create('data_rights_guardian_consents', function (Blueprint $table): void {
             $table->ulid('id')->primary();
-            $table->morphs('subject');
+            Morphs::add($table, 'subject');
             $table->string('kind', 32);
             $table->string('method', 32);
-            $table->nullableMorphs('guardian');
+            Morphs::add($table, 'guardian', nullable: true);
             $table->text('guardian_name')->nullable();
             $table->text('verification_reference')->nullable();
             $table->timestamp('verified_at');

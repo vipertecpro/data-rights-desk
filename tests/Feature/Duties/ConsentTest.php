@@ -13,6 +13,7 @@ use Vipertecpro\DataRightsDesk\Exceptions\NoticeMissing;
 use Vipertecpro\DataRightsDesk\Exceptions\UnknownPurpose;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\ConsentRecord;
+use Vipertecpro\DataRightsDesk\Models\Notice;
 use Vipertecpro\DataRightsDesk\Models\NoticeDelivery;
 
 beforeEach(function () {
@@ -70,9 +71,16 @@ it('s.7: an unknown purpose throws UnknownPurpose', function () {
 
 it('s.5(1): consent cannot be recorded before a notice is published in that language', function () {
     config()->set('data-rights.locales', ['en', 'hi']);
+    Notice::query()->where('locale', 'hi')->delete();
 
-    DataRights::give($this->user, 'marketing', ['locale' => 'ta']);
+    DataRights::give($this->user, 'marketing', ['locale' => 'hi']);
 })->throws(NoticeMissing::class);
+
+it('s.5(3): a posted language that is not offered falls back to the default notice', function () {
+    $record = DataRights::give($this->user, 'marketing', ['locale' => 'ta']);
+
+    expect($record->locale)->toBe('en');
+});
 
 it('s.6(1): consent is recorded per purpose only from an explicit POST by the person', function () {
     $this->actingAs($this->user)->get('/data-rights/preferences')->assertOk();

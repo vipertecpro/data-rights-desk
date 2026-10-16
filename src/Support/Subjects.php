@@ -82,13 +82,28 @@ final class Subjects
      */
     public static function notify(Model $subject, Notification $notification): bool
     {
+        $email = self::email($subject);
+
         if (method_exists($subject, 'notify')) {
+            $channels = method_exists($notification, 'via') ? (array) $notification->via($subject) : [];
+            $mailRoute = method_exists($subject, 'routeNotificationFor') ? $subject->routeNotificationFor('mail', $notification) : null;
+
+            // Laravel's mail route reads `email` and drops the mail without a word when it is
+            // empty. With another email column configured, send the mail there instead.
+            if (in_array('mail', $channels, true) && empty($mailRoute) && $email !== null) {
+                Notifier::route('mail', $email)->notify($notification);
+
+                if (array_diff($channels, ['mail']) !== []) {
+                    $subject->notify($notification);
+                }
+
+                return true;
+            }
+
             $subject->notify($notification);
 
             return true;
         }
-
-        $email = self::email($subject);
 
         if ($email === null) {
             return false;

@@ -2,9 +2,13 @@
 
 namespace Vipertecpro\DataRightsDesk\Checker;
 
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use ReflectionProperty;
 use Throwable;
 use Vipertecpro\DataRightsDesk\Concerns\HasRetention;
 use Vipertecpro\DataRightsDesk\DataRightsDeskServiceProvider;
@@ -19,6 +23,7 @@ use Vipertecpro\DataRightsDesk\Support\CheckReport;
 use Vipertecpro\DataRightsDesk\Support\Contact;
 use Vipertecpro\DataRightsDesk\Support\Languages;
 use Vipertecpro\DataRightsDesk\Support\Limits;
+use Vipertecpro\DataRightsDesk\Support\PackageRoutes;
 use Vipertecpro\DataRightsDesk\Support\Purpose;
 use Vipertecpro\DataRightsDesk\Support\Sources;
 use Vipertecpro\DataRightsDesk\Verification\NoParentalConsentVerifier;
@@ -31,6 +36,17 @@ class Checker
 {
     /** Column names that are personal data only next to a stronger one, or on the users table. */
     private const NAME_COLUMNS = ['name', 'first_name', 'last_name', 'full_name'];
+
+    /** Tables that common packages fill with personal data under column names the column check cannot see. */
+    private const KNOWN_TABLES = [
+        'activity_log' => 'spatie/laravel-activitylog keeps changed values and who made each change',
+        'audits' => 'owen-it/laravel-auditing keeps old and new values',
+        'telescope_entries' => 'Laravel Telescope keeps request data, queries and mail',
+        'pulse_entries' => 'Laravel Pulse keeps user ids and the addresses they opened',
+        'notifications' => 'database notifications keep their content per person',
+        'media' => 'spatie/laravel-medialibrary keeps the files people upload',
+        'personal_access_tokens' => 'Laravel Sanctum keeps sign-in tokens per person',
+    ];
 
     /** @var list<array{code: string, message: string}> */
     private array $errors = [];
@@ -50,6 +66,7 @@ class Checker
 
         $purposes = $this->checkPurposes();
         $this->checkContact();
+        $this->checkAppUrl();
         $this->checkLanguages();
 
         if ($purposes !== null) {
@@ -64,6 +81,8 @@ class Checker
         $this->checkProcessors();
         $this->checkChildren();
         $this->checkGate();
+        $this->checkRoutes();
+        $this->checkGuestRedirect();
 
         if ($purposes !== null) {
             $this->checkExamplePurposes();
@@ -202,6 +221,58 @@ class Checker
         }
     }
 
+    private function checkAppUrl(): void
+    {
+        $url = (string) config('app.url');
+        $host = strtolower(trim((string) parse_url($url, PHP_URL_HOST), '[]'));
+
+        if ($host !== '' && ! in_array($host, ['localhost', '127.0.0.1', '::1', '0.0.0.0'], true)) {
+            return;
+        }
+
+        $message = "APP_URL is [{$url}]. Notices and emails are built with it, so their links would not work for anyone else. Set APP_URL to your site's address, then run php artisan data-rights:notice.";
+
+        app()->isProduction() ? $this->error('app_url_local', $message) : $this->warning('app_url_local', $message);
+    }
+
+    private function checkRoutes(): void
+    {
+        $clashes = PackageRoutes::clashes();
+
+        foreach ($clashes['taken'] as $name => $uri) {
+            $this->error('route_name_taken', "Your app's route [{$uri}] also uses the package's route name [{$name}]. Two routes with one name break php artisan route:cache. Rename your route.");
+        }
+
+        if ($clashes['missing'] !== []) {
+            $this->error('route_missing', 'These package routes are missing, most likely because a route in your app uses the same address: '.implode(', ', $clashes['missing']).'. Move your route, or move the package with routes.public.prefix or routes.dashboard.prefix.');
+        }
+    }
+
+    /**
+     * The consent, request and dashboard pages need a signed-in person. Laravel sends a
+     * guest to the route named "login"; without one (and without redirectGuestsTo) the guest gets an error.
+     */
+    private function checkGuestRedirect(): void
+    {
+        if (! config('data-rights.routes.public.enabled', true) && ! config('data-rights.routes.dashboard.enabled', true)) {
+            return;
+        }
+
+        if (Route::has('login')) {
+            return;
+        }
+
+        try {
+            $redirect = (new ReflectionProperty(Authenticate::class, 'redirectToCallback'))->getValue();
+        } catch (Throwable) {
+            return;
+        }
+
+        if ($redirect === null) {
+            $this->error('login_route_missing', 'Your app has no route named [login], so a guest who opens the consent, request or dashboard pages gets an error. Name your sign-in route login, or call $middleware->redirectGuestsTo(...) in bootstrap/app.php.');
+        }
+    }
+
     private function checkExamplePurposes(): void
     {
         try {
@@ -241,6 +312,8 @@ class Checker
             ? (new $subjectClass)->getTable()
             : null;
 
+        $personKeys = array_values(array_unique(['user_id', ...($subjectTable !== null ? [Str::singular($subjectTable).'_id'] : [])]));
+
         try {
             $tables = array_unique(array_column(Schema::getTables(), 'name'));
         } catch (Throwable) {
@@ -252,11 +325,20 @@ class Checker
                 continue;
             }
 
-            $columns = array_values(array_intersect(Schema::getColumnListing($table), $personal));
+            $listing = Schema::getColumnListing($table);
+            $columns = array_values(array_intersect($listing, $personal));
+
+            if (isset(self::KNOWN_TABLES[$table]) && (array_diff($columns, self::NAME_COLUMNS) === []) && ! in_array($table, $erased, true)) {
+                $this->warning('known_personal_table', "Table [{$table}] can hold personal data: ".self::KNOWN_TABLES[$table].'. Cover it with an Eraser or a HasRetention model, or add it to checker.ignore_tables if you prune it on a schedule or it holds none.');
+
+                continue;
+            }
 
             // A name alone is not personal data: products, tags and categories have names too. A name
-            // counts when the same table holds an email, phone, address, IP or similar, or on the users table.
-            if ($columns === [] || (array_diff($columns, self::NAME_COLUMNS) === [] && $table !== $subjectTable)) {
+            // counts when the same table holds an email, phone, address, IP or similar, on the users
+            // table, or next to a key that points at a person (a profiles table with user_id).
+            if ($columns === [] || (array_diff($columns, self::NAME_COLUMNS) === [] && $table !== $subjectTable
+                && array_intersect($listing, $personKeys) === [])) {
                 continue;
             }
 

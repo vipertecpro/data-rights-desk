@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Vipertecpro\DataRightsDesk\Support\Morphs;
 
 return new class extends Migration
 {
@@ -11,7 +12,7 @@ return new class extends Migration
         // Append-only consent ledger (s.6(10)).
         Schema::create('data_rights_consents', function (Blueprint $table): void {
             $table->ulid('id')->primary();
-            $table->morphs('subject');
+            Morphs::add($table, 'subject');
             $table->string('purpose', 64);
             $table->string('action', 16);
             $table->foreignUlid('notice_id')->nullable()->constrained('data_rights_notices')->nullOnDelete();

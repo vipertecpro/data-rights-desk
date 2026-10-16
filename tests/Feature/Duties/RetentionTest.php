@@ -212,9 +212,24 @@ it('Rule 8(3): consent, a new request or a restore clears a past erasure', funct
     expect(SubjectProfile::lookup($this->user)->erased_at)->toBeNull();
 
     $soft = SoftUser::query()->create(['name' => 'Soft', 'email' => 'soft@example.com']);
+    SubjectProfile::for($soft)->forceFill(['erased_at' => now()])->save();
     $soft->delete();
-    expect(SubjectProfile::lookup($soft)->erased_at)->not->toBeNull();
-
     $soft->restore();
     expect(SubjectProfile::lookup($soft)->erased_at)->toBeNull();
+});
+
+it('Rule 8(3): a soft delete keeps the data, so the person is not marked erased; a force delete is', function () {
+    $this->publishNotice();
+    $soft = SoftUser::query()->create(['name' => 'Soft', 'email' => 'soft@example.com']);
+    DataRights::give($soft, 'marketing');
+
+    $soft->delete();
+    expect(SubjectProfile::lookup($soft)->erased_at)->toBeNull();
+
+    $this->travel(400)->days();
+    DataRights::retention()->run();
+    expect(ConsentRecord::query()->where('subject_id', $soft->getKey())->count())->toBe(1);
+
+    $soft->forceDelete();
+    expect(SubjectProfile::lookup($soft)->erased_at)->not->toBeNull();
 });

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Vipertecpro\DataRightsDesk\Support\Morphs;
 
 return new class extends Migration
 {
@@ -16,7 +17,7 @@ return new class extends Migration
             $table->string('holdable_id', 64);
             $table->text('reason');
             $table->string('law_reference')->nullable();
-            $table->nullableMorphs('placed_by');
+            Morphs::add($table, 'placed_by', nullable: true);
             $table->timestamp('placed_at');
             $table->timestamp('expires_at')->nullable();
             $table->timestamp('released_at')->nullable();
