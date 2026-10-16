@@ -1,0 +1,50 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Database\Eloquent\Model;
+use Vipertecpro\DataRightsDesk\Contracts\Eraser;
+use Vipertecpro\DataRightsDesk\Contracts\Exporter;
+use Vipertecpro\DataRightsDesk\Support\ErasureContext;
+use Vipertecpro\DataRightsDesk\Support\ErasureOutcome;
+
+/**
+ * Gives and erases the personal data this part of the app holds.
+ * Add this class to 'sources' in config/data-rights.php.
+ */
+class {{ class }} implements Exporter, Eraser
+{
+    public function name(): string
+    {
+        return '{{ name }}';
+    }
+
+    /** @return list<string> */
+    public function tables(): array
+    {
+        // TODO: list the tables this source covers, for example ['orders'].
+        return [];
+    }
+
+    public function processing(): string
+    {
+        // TODO: say in plain words what you do with this data.
+        return '';
+    }
+
+    /** @return array<int|string, mixed> */
+    public function export(Model $subject): array
+    {
+        // TODO: return the person's rows, JSON-safe. Leave out secrets such as password hashes.
+        return [];
+    }
+
+    public function erase(Model $subject, ErasureContext $context): ErasureOutcome
+    {
+        // TODO: erase the person's rows. Skip records where $context->isHeld($record) is true,
+        // and keep what another law needs with ErasureOutcome::retained($count, 'reason', $until).
+        // When $context->keepsAccountAccess() is true (inactivity erasure), keep what the
+        // person needs to sign in and any stored-value virtual token.
+        return ErasureOutcome::nothing();
+    }
+}
