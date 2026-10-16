@@ -6,6 +6,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Vipertecpro\DataRightsDesk\DataRightsManager;
 use Vipertecpro\DataRightsDesk\Enums\BreachDraftKind;
 use Vipertecpro\DataRightsDesk\Models\Breach;
@@ -74,7 +75,7 @@ class BreachController
         }
 
         $added = $this->dataRights->breaches()->addAffected($breach, $subjects);
-        $message = "{$added} people added.".($unknown > 0 ? " {$unknown} email(s) did not match anyone." : '');
+        $message = 'Added '.$added.' '.Str::plural('person', $added).'.'.($unknown > 0 ? " {$unknown} email(s) did not match anyone." : '');
 
         return redirect()->route('data-rights-desk.breaches.show', $breach)->with('data-rights.status', $message);
     }
@@ -97,7 +98,7 @@ class BreachController
     {
         $sent = $this->dataRights->breaches()->notifyAffected($breach);
 
-        return redirect()->route('data-rights-desk.breaches.show', $breach)->with('data-rights.status', "{$sent} people told.");
+        return redirect()->route('data-rights-desk.breaches.show', $breach)->with('data-rights.status', 'Told '.$sent.' '.Str::plural('person', $sent).'.');
     }
 
     public function draft(Request $http, Breach $breach, string $kind): Response

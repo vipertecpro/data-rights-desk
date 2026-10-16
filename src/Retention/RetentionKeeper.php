@@ -19,6 +19,7 @@ use Vipertecpro\DataRightsDesk\Models\LegalHold;
 use Vipertecpro\DataRightsDesk\Models\Nomination;
 use Vipertecpro\DataRightsDesk\Models\NoticeDelivery;
 use Vipertecpro\DataRightsDesk\Models\ProcessingLog;
+use Vipertecpro\DataRightsDesk\Models\RequestEvent;
 use Vipertecpro\DataRightsDesk\Models\RetentionRun;
 use Vipertecpro\DataRightsDesk\Models\SubjectProfile;
 use Vipertecpro\DataRightsDesk\Notifications\ErasureWarningNotification;
@@ -337,8 +338,7 @@ class RetentionKeeper
                     $count += (int) $query->delete();
                 }
 
-                // Request events go with their requests (cascade).
-                $count += (int) $requests->delete();
+                $count += $this->deleteRequests($requests);
             });
         }
 
@@ -361,7 +361,25 @@ class RetentionKeeper
 
         $this->excludeHeldSubjects($query);
 
-        return $pretend ? $query->count() : (int) $query->delete();
+        return $pretend ? $query->count() : $this->deleteRequests($query);
+    }
+
+    /**
+     * Deletes requests and their events, without relying on a database cascade.
+     *
+     * @param  Builder<DataRightsRequest>  $requests
+     */
+    private function deleteRequests(Builder $requests): int
+    {
+        $count = 0;
+
+        $requests->clone()->select('id')->chunkById(500, function ($chunk) use (&$count): void {
+            $ids = $chunk->modelKeys();
+            RequestEvent::query()->whereIn('request_id', $ids)->delete();
+            $count += (int) DataRightsRequest::query()->whereKey($ids)->delete();
+        });
+
+        return $count;
     }
 
     /** Calls a HasRetention method; the trait's methods are not on the Model type. */
