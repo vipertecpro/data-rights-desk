@@ -2,6 +2,23 @@
 
 All notable changes to this package are written here. It follows Semantic Versioning.
 
+## 1.1.0 - Unreleased
+
+### Added
+
+- **Token sign-in for the JSON feed**: `routes.api.middleware` and `routes.api.auth` in the config. Mobile apps, including NativePHP apps, use `['api']` and `'auth:sanctum'` with Laravel Sanctum. The defaults keep the 1.0 behaviour (browser session).
+- **More databases in CI**: MariaDB 11 and SQL Server 2022 join SQLite, MySQL 8.0 and PostgreSQL 16.
+- **Consent at sign-up**: the `<x-data-rights::consent-fields>` component (the notice link and one unticked box per consent purpose), `DataRights::giveFromForm()` (takes the request or a Fortify input array, and records the notice version the form showed), `DataRights::consents()->giveMany()` and the `IncludesPurpose` validation rule.
+- **A smarter install command**: `data-rights:install` names the app's database, front end (Livewire, Blade, or Inertia with React, Vue or Svelte) and whether Sanctum is installed, then prints the next steps that fit. It never edits your code.
+
+### Changed
+
+- The JSON feed is its own route group with the same addresses and route names. It now works even when the public pages are switched off.
+
+### Fixed
+
+- **SQL Server**: the `created_at` column of `data_rights_consents` now keeps microseconds like `occurred_at`. SQL Server refused the old column type. This applies to new installs. Apps already on 1.0 with SQLite, MySQL, MariaDB or PostgreSQL need nothing.
+
 ## 1.0.0 - 2026-10-16
 
 First release. Needs PHP 8.3 or newer and Laravel 12 or 13.
