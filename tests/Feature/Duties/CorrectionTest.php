@@ -34,7 +34,7 @@ it('s.12(2): correction, completion and updating requests move through statuses 
         ->and($request->response)->toBe('We corrected your surname.')
         ->and($request->closed_at)->not->toBeNull()
         ->and($request->events()->count())->toBe(4)
-        ->and($request->events()->get()->last()->actor_id)->toBe($admin->id);
+        ->and((string) $request->events()->get()->last()->actor_id)->toBe((string) $admin->id); // SQL Server returns ids as strings
 
     Event::assertDispatchedTimes(RequestStatusChanged::class, 2);
     Notification::assertSentTo($person, RequestClosedNotification::class);

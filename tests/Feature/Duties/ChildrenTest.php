@@ -191,7 +191,7 @@ it('s.9(1): the age answer is locked once given, and staff change it with a note
     $profile = SubjectProfile::lookup($this->child);
     expect(DataRights::children()->isChild($this->child))->toBeFalse()
         ->and($profile->age_note)->toBe('Her parent emailed: she typed the wrong answer.')
-        ->and($profile->age_changed_by_id)->toBe($admin->id)
+        ->and((string) $profile->age_changed_by_id)->toBe((string) $admin->id)
         ->and((string) DB::table('data_rights_subjects')->value('age_note'))->not->toContain('wrong answer');
 
     Event::assertDispatched(AgeAnswerChanged::class, fn (AgeAnswerChanged $e) => $e->from === AgeStatus::Child && $e->to === AgeStatus::Adult);
