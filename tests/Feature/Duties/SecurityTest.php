@@ -99,10 +99,12 @@ it('Security: request creation is throttled to six a minute', function () {
     $this->actingAs($person)->post('/data-rights/requests', ['type' => 'grievance'])->assertTooManyRequests();
 });
 
-it('Security: the asset route serves only the stylesheet, with a long cache', function () {
-    $this->get('/data-rights/assets/data-rights.css')->assertOk()
-        ->assertHeader('Content-Type', 'text/css; charset=UTF-8')
-        ->assertHeader('Cache-Control', 'immutable, max-age=31536000, public');
+it('Security: the asset route serves only the two stylesheets, with a long cache', function () {
+    foreach (['data-rights.css', 'consent-fields.css'] as $file) {
+        $this->get("/data-rights/assets/{$file}")->assertOk()
+            ->assertHeader('Content-Type', 'text/css; charset=UTF-8')
+            ->assertHeader('Cache-Control', 'immutable, max-age=31536000, public');
+    }
 
     $this->get('/data-rights/assets/other.css')->assertNotFound();
     $this->get('/data-rights/assets/..%2Fcomposer.json')->assertNotFound();

@@ -2,6 +2,12 @@
 
 All notable changes to this package are written here. It follows Semantic Versioning.
 
+## 1.2.1 - unreleased
+
+### Fixed
+
+- **The sign-up box had no layout** in apps whose CSS resets the browser's styles, which includes every Laravel starter kit with Tailwind: the age answers and the purposes ran together as one paragraph, the notice link did not look like a link, and the error messages looked like normal text. The box now brings a small stylesheet of its own, scoped to `.drd-consent-fields`, through a plain link (a strict Content-Security-Policy still works). It takes the page's font and text colour. `--drd-error` changes the error colour, and `:styled="false"` leaves the stylesheet out.
+
 ## 1.2.0 - 2026-10-17
 
 ### Added

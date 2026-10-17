@@ -237,7 +237,7 @@ If you build your own screens, `DataRights::give($user, 'marketing', [...])` and
 <x-data-rights::consent-fields :required="['account']" ask-age />
 ```
 
-`account` is the example purpose from the shipped config. Use the keys of your own purposes. A key that is not in your config, or one that does not need consent, stops the page with an error, so a typo shows at once. `ask-age` adds the age question (section 9(1)). Leave it out if children cannot sign up. The box shows its own validation messages.
+`account` is the example purpose from the shipped config. Use the keys of your own purposes. A key that is not in your config, or one that does not need consent, stops the page with an error, so a typo shows at once. `ask-age` adds the age question (section 9(1)). Leave it out if children cannot sign up. The box shows its own validation messages. It brings a small stylesheet of its own that takes your page's font and text colour, so it fits light and dark themes. It is a plain stylesheet link, so a strict Content-Security-Policy still works. Set `--drd-error` in your CSS to change the error colour, or pass `:styled="false"` and style the `drd-consent-*` classes yourself.
 
 Then record the ticked purposes when you create the user. The record names the notice version the form showed. In a Fortify app this goes in `app/Actions/Fortify/CreateNewUser.php`:
 

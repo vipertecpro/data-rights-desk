@@ -43,6 +43,17 @@ it('s.6(1): the sign-up box shows the notice link and one unticked box per conse
         ->and($marketing[0])->not->toContain('required');
 });
 
+it('s.6(1): the sign-up box brings its own stylesheet once, as a plain link, and can leave it out', function () {
+    $html = Blade::render('<x-data-rights::consent-fields /><x-data-rights::consent-fields field="other" />');
+
+    expect(substr_count($html, 'consent-fields.css?v='))->toBe(1)
+        ->and($html)->toContain('<link rel="stylesheet"')
+        ->not->toContain('<style')
+        ->not->toContain('style="');
+
+    expect(Blade::render('<x-data-rights::consent-fields :styled="false" />'))->not->toContain('consent-fields.css');
+});
+
 it('s.6(10): giveFromForm records only the ticked consent purposes, against the notice the form showed', function () {
     $person = $this->makeUser('person@example.com');
     $shown = Notice::query()->where('locale', 'en')->firstOrFail();

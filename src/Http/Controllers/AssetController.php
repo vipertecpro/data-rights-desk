@@ -4,11 +4,12 @@ namespace Vipertecpro\DataRightsDesk\Http\Controllers;
 
 use Symfony\Component\HttpFoundation\Response;
 
-/** Serves the one stylesheet, with a long cache. No other file can be fetched. */
+/** Serves the package's two stylesheets, with a long cache. No other file can be fetched. */
 class AssetController
 {
     private const FILES = [
         'data-rights.css' => 'text/css; charset=UTF-8',
+        'consent-fields.css' => 'text/css; charset=UTF-8',
     ];
 
     public function __invoke(string $file): Response
