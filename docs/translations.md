@@ -27,13 +27,13 @@ Please do not rely on a machine translation of a legal notice as it is. Before y
 | `kok` | Konkani | कोंकणी | Devanagari | ltr | needs_review (ai-draft) |
 | `mai` | Maithili | मैथिली | Devanagari | ltr | needs_review (ai-draft) |
 | `ml` | Malayalam | മലയാളം | Malayalam | ltr | needs_review (ai-draft) |
-| `mni` | Manipuri | Manipuri | Meitei Mayek | ltr | needed (by hand) |
+| `mni` | Manipuri | ꯃꯩꯇꯩꯂꯣꯟ | Meitei Mayek | ltr | needs_review (ai-draft) |
 | `mr` | Marathi | मराठी | Devanagari | ltr | needs_review (ai-draft) |
 | `ne` | Nepali | नेपाली | Devanagari | ltr | needs_review (ai-draft) |
 | `or` | Odia | ଓଡ଼ିଆ | Odia | ltr | needs_review (ai-draft) |
-| `pa` | Punjabi | Punjabi | Gurmukhi | ltr | needed (by hand) |
+| `pa` | Punjabi | ਪੰਜਾਬੀ | Gurmukhi | ltr | needs_review (ai-draft) |
 | `sa` | Sanskrit | संस्कृतम् | Devanagari | ltr | needs_review (ai-draft) |
-| `sat` | Santali | Santali | Ol Chiki | ltr | needed (by hand) |
+| `sat` | Santali | ᱥᱟᱱᱛᱟᱲᱤ | Ol Chiki | ltr | needs_review (ai-draft) |
 | `sd` | Sindhi | سنڌي | Perso-Arabic | rtl | needs_review (ai-draft) |
 | `ta` | Tamil | தமிழ் | Tamil | ltr | needs_review (ai-draft) |
 | `te` | Telugu | తెలుగు | Telugu | ltr | needs_review (ai-draft) |
@@ -262,7 +262,14 @@ In 1.3 the Hindi text was revised against the gazette: 47 strings changed, mostl
 
 ### Manipuri (`mni`)
 
-- Read the whole text; the drafting left no specific notes.
+- All keys: 'consent' is translated as 'ꯑꯌꯥꯕ' (permission/consent), and 'withdraw consent' as 'ꯑꯌꯥꯕ ꯍꯟꯅ ꯂꯧꯕ'. 'ꯌꯥꯅꯕ' is an alternative. Please confirm the preferred legal term.
+- All keys: 'personal data' is translated as 'ꯃꯁꯥꯒꯤ ꯗꯦꯇꯥ', following the Hindi approach of keeping 'data' as a loanword.
+- notice.basis_legitimate_use, notice.basis_legitimate_use_a, public.rights.intro: the Act's name is translated as 'ꯗꯤꯖꯤꯇꯦꯜ ꯃꯁꯥꯒꯤ ꯗꯦꯇꯥ ꯉꯥꯛꯁꯦꯟꯕꯒꯤ ꯑꯥꯏꯟ, 2023'. No official Manipuri name of the Act was available to check against.
+- Board keys (notice.board_*, public.rights.board_*, mail.request_closed.grievance): 'Data Protection Board of India' is transliterated as 'ꯗꯦꯇꯥ ꯄ꯭ꯔꯣꯇꯦꯛꯁꯟ ꯕꯣꯔꯗ ꯑꯣꯐ ꯏꯟꯗꯤꯌꯥ', because the official Hindi has no full name for it. 'complain' is rendered with the loan 'ꯀꯝꯞꯂꯦꯟ ꯇꯧꯕ'. 'grievance' is rendered as 'ꯑꯋꯥꯕ' and 'raise a grievance' as 'ꯑꯋꯥꯕ ꯐꯣꯡꯗꯣꯀꯄ'. Please check that these read naturally and stay distinct.
+- notice.basis_legitimate_use, public.preferences.legitimate_use: 'legitimate use' is rendered descriptively as 'ꯑꯥꯏꯟꯅ ꯌꯥꯕ ꯁꯤꯖꯤꯟꯅꯕ' (use allowed by law), because the term has no settled equivalent.
+- mail.breach.*: 'personal data breach' is rendered as 'ꯃꯁꯥꯒꯤ ꯗꯦꯇꯥ ꯊꯨꯒꯥꯏꯕ'. Please check that a lay reader understands this. In breach.subject, the noun phrase is kept without adding 'occurred'.
+- Guardian keys (public.preferences.guardian_*, public.guardian_verifier_missing): 'guardian' is the loanword 'ꯒꯥꯔꯗꯤꯌꯥꯟ' and 'lawful guardian' is 'ꯑꯥꯏꯟꯅ ꯌꯥꯕ ꯒꯥꯔꯗꯤꯌꯥꯟ'. 'parent' is 'ꯃꯃꯥ-ꯃꯄꯥ'.
+- notice.title, public.nav.notice, public.notice.title and the notice_link keys: 'Privacy notice' is transliterated as 'ꯄ꯭ꯔꯥꯏꯚꯦꯁꯤ ꯅꯣꯇꯤꯁ'. A native rendering may be preferred.
 
 ### Marathi (`mr`)
 
@@ -299,7 +306,14 @@ In 1.3 the Hindi text was revised against the gazette: 47 strings changed, mostl
 
 ### Punjabi (`pa`)
 
-- Read the whole text; the drafting left no specific notes.
+- All keys: 'personal data' is translated as 'ਨਿੱਜੀ ਡੇਟਾ' and the Act as 'ਡਿਜੀਟਲ ਨਿੱਜੀ ਡੇਟਾ ਸੁਰੱਖਿਆ ਐਕਟ, 2023'. Please check these against any official Punjabi rendering of the Act. 'ਐਕਟ' was chosen over the Hindi-style 'ਅਧਿਨਿਯਮ' because it is more common in Punjabi.
+- notice.board_heading, public.rights.board_*, mail.request_closed.grievance: no official Punjabi name for the Data Protection Board of India is known. 'ਭਾਰਤੀ ਡੇਟਾ ਸੁਰੱਖਿਆ ਬੋਰਡ' follows the Hindi 'भारतीय डेटा संरक्षण बोर्ड'.
+- Grievance and complaint keys (notice.rights_body, notice.board_*, public.rights.right_grievance, public.requests.intro, public.types.grievance, mail.request_closed.grievance): 'ਸ਼ਿਕਾਇਤ' is used for both terms, as the official Hindi uses 'शिकायत' for both. The context ('ਸਾਡੇ ਕੋਲ' vs 'ਬੋਰਡ ਕੋਲ') shows which is meant.
+- notice.title, public.nav.notice and related keys: 'privacy' is rendered as 'ਪਰਦੇਦਾਰੀ'. 'ਨਿੱਜਤਾ' is an alternative.
+- notice.basis_legitimate_use, public.preferences.legitimate_use: 'legitimate use' has no settled Punjabi legal term. 'ਜਾਇਜ਼ ਵਰਤੋਂ' is used.
+- notice.basis_legitimate_use_a: the clause letter is kept as Latin '7(a)' to match the :clause value the code inserts. Punjabi legal texts may use '(ੳ)'.
+- mail.breach.subject, mail.breach.intro: 'personal data breach' is rendered as 'ਨਿੱਜੀ ਡੇਟਾ ਉਲੰਘਣਾ' (cf. Hindi 'उल्लंघन'). Please confirm it reads as a security breach.
+- notice.heading, notice.intro, public.rights.intro, mail.notice.subject: the masculine verb agreement (ਵਰਤਦਾ, ਉਸ ਕੋਲ) assumes :business is treated as masculine.
 
 ### Sanskrit (`sa`)
 
@@ -314,7 +328,14 @@ In 1.3 the Hindi text was revised against the gazette: 47 strings changed, mostl
 
 ### Santali (`sat`)
 
-- Read the whole text; the drafting left no specific notes.
+- Overall: a fluent Santali (Ol Chiki) reviewer should check the whole file. The verb morphology is the main concern: subject and object markers such as -ape, -le and -aleyape, and negative and past forms. Most of these were written without native-speaker verification.
+- Register: the honorific plural 'ᱟᱯᱮ' (ape) and '-ᱯᱮ' imperatives are used for 'you', and exclusive 'ᱟᱞᱮ' (ale) for 'we'. Please confirm this is the right polite register for public-facing text.
+- personal data (all keys): rendered 'ᱱᱤᱡᱮᱨ ᱰᱟᱴᱟ' (own/personal data). There is no settled Santali legal term. Consider whether a transliteration of the Hindi 'वैयक्तिक डेटा' or 'ᱯᱟᱨᱥᱚᱱᱟᱞ ᱰᱟᱴᱟ' is preferred.
+- Act name (notice.basis_legitimate_use, notice.basis_legitimate_use_a, public.rights.intro): rendered 'ᱰᱤᱡᱤᱴᱟᱞ ᱱᱤᱡᱮᱨ ᱰᱟᱴᱟ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱟᱹᱭᱤᱱ, 2023'. This is an unofficial Santali rendering, since no official Santali text of the Act was available.
+- Data Protection Board of India (board_* keys, mail.request_closed.grievance): rendered 'ᱵᱷᱟᱨᱚᱛ ᱨᱮᱭᱟᱜ ᱰᱟᱴᱟ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱵᱳᱨᱰ'. India is written 'ᱵᱷᱟᱨᱚᱛ'; some Santali writers use 'ᱥᱤᱧᱚᱛ' instead.
+- grievance vs complaint: 'ᱥᱤᱠᱟᱹᱭᱛ' is used for grievance (to the business) and 'ᱱᱟᱞᱤᱥ' for complaint (to the Board), to keep the two steps distinct. Please check that both words are natural.
+- legitimate use (notice.basis_legitimate_use, public.preferences.legitimate_use): rendered 'ᱡᱟᱭᱡ ᱵᱮᱵᱷᱟᱨ'. The term has no settled equivalent and does not appear in the Hindi Rules.
+- nominate (notice.rights_body, public.rights.right_nomination, public.nominations.*): the Hindi official 'नामित' is transliterated as 'ᱱᱟᱢᱤᱛ'. Check that readers understand it; 'ᱵᱟᱪᱷᱟᱣ' (choose) is a plainer alternative.
 
 ### Sindhi (`sd`)
 
