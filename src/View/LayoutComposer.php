@@ -12,7 +12,8 @@ use Vipertecpro\DataRightsDesk\Support\Languages;
  */
 class LayoutComposer
 {
-    private static ?string $assetVersion = null;
+    /** @var array<string, string> */
+    private static array $assetVersions = [];
 
     public function compose(View $view): void
     {
@@ -22,14 +23,22 @@ class LayoutComposer
             'business' => Contact::businessName(),
             'locale' => $locale,
             'dir' => Languages::direction($locale),
-            'css' => Route::has('data-rights.asset')
-                ? route('data-rights.asset', ['file' => 'data-rights.css', 'v' => self::assetVersion()])
-                : null,
+            'css' => self::assetUrl('data-rights.css'),
         ]);
     }
 
-    public static function assetVersion(): string
+    /** The URL of one of the package's stylesheets, versioned by its content; null when the route is off. */
+    public static function assetUrl(string $file): ?string
     {
-        return self::$assetVersion ??= substr((string) md5_file(__DIR__.'/../../resources/dist/data-rights.css'), 0, 12);
+        if (! Route::has('data-rights.asset')) {
+            return null;
+        }
+
+        return route('data-rights.asset', ['file' => $file, 'v' => self::assetVersion($file)]);
+    }
+
+    public static function assetVersion(string $file = 'data-rights.css'): string
+    {
+        return self::$assetVersions[$file] ??= substr((string) md5_file(__DIR__.'/../../resources/dist/'.$file), 0, 12);
     }
 }

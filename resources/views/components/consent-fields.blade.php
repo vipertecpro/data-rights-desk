@@ -4,6 +4,7 @@
     'locale' => null,
     'field' => 'data_rights',
     'askAge' => false,
+    'styled' => true,
 ])
 @php
     /** @var \Vipertecpro\DataRightsDesk\DataRightsManager $drd */
@@ -34,6 +35,12 @@
     $drdErrors = isset($errors) && $errors instanceof \Illuminate\Support\ViewErrorBag ? $errors : new \Illuminate\Support\ViewErrorBag;
 @endphp
 {{-- s.5(1) notice with or before the request; s.6(1) one box per purpose, none ticked for the person. --}}
+@if ($styled && ($drdCss = \Vipertecpro\DataRightsDesk\View\LayoutComposer::assetUrl('consent-fields.css')))
+    @once
+        {{-- A plain stylesheet link, so a strict Content-Security-Policy (style-src 'self') still works. --}}
+        <link rel="stylesheet" href="{{ $drdCss }}">
+    @endonce
+@endif
 <fieldset {{ $attributes->merge(['class' => 'drd-consent-fields', 'lang' => $drdLocale]) }}>
     <legend>{{ __('data-rights::public.signup.legend', [], $drdLocale) }}</legend>
 
@@ -42,11 +49,13 @@
     @else
         @if ($askAge)
             {{-- s.9(1): know whether the person is a child before anything is recorded for her. --}}
-            <p class="drd-consent-age">
-                {{ __('data-rights::public.preferences.age_question', [], $drdLocale) }}
-                <label><input type="radio" name="{{ $field }}[age]" value="adult" @checked($drdOldAge === 'adult') required> {{ __('data-rights::public.preferences.age_adult', [], $drdLocale) }}</label>
-                <label><input type="radio" name="{{ $field }}[age]" value="child" @checked($drdOldAge === 'child')> {{ __('data-rights::public.preferences.age_child', [], $drdLocale) }}</label>
-            </p>
+            <div class="drd-consent-age" role="radiogroup" aria-labelledby="{{ $field }}-age-question">
+                <p id="{{ $field }}-age-question">{{ __('data-rights::public.preferences.age_question', [], $drdLocale) }}</p>
+                <div class="drd-consent-age-options">
+                    <label><input type="radio" name="{{ $field }}[age]" value="adult" @checked($drdOldAge === 'adult') required> <span>{{ __('data-rights::public.preferences.age_adult', [], $drdLocale) }}</span></label>
+                    <label><input type="radio" name="{{ $field }}[age]" value="child" @checked($drdOldAge === 'child')> <span>{{ __('data-rights::public.preferences.age_child', [], $drdLocale) }}</span></label>
+                </div>
+            </div>
             @foreach ($drdErrors->get($drdErrorKey.'.age') as $drdMessage)
                 <p class="drd-consent-error" role="alert">{{ $drdMessage }}</p>
             @endforeach
@@ -74,7 +83,7 @@
             <p class="drd-consent-error" role="alert">{{ $drdMessage }}</p>
         @endforeach
 
-        <p><small>{{ __('data-rights::public.signup.withdraw', [], $drdLocale) }}</small></p>
+        <p class="drd-consent-note">{{ __('data-rights::public.signup.withdraw', [], $drdLocale) }}</p>
         <input type="hidden" name="{{ $field }}[notice]" value="{{ $drdNotice->getKey() }}">
         <input type="hidden" name="{{ $field }}[locale]" value="{{ $drdNotice->locale }}">
     @endif

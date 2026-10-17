@@ -1,0 +1,91 @@
+/*
+ * Data Rights Desk: the sign-up consent box (<x-data-rights::consent-fields>).
+ * Scoped to .drd-consent-fields, so it does not touch the rest of the page. It takes the
+ * page's own font and text colour, so it fits light and dark themes. Set --drd-error to
+ * change the error colour. Turn it off with :styled="false" and style the classes yourself.
+ */
+.drd-consent-fields {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.drd-consent-fields legend {
+    margin: 0 0 0.25rem;
+    padding: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.drd-consent-fields p {
+    margin: 0;
+}
+
+.drd-consent-fields a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.drd-consent-age {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.drd-consent-age-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+}
+
+.drd-consent-age-options label,
+.drd-consent-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    cursor: pointer;
+}
+
+.drd-consent-field {
+    padding: 0.75rem;
+    border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+    border-radius: 0.5rem;
+}
+
+.drd-consent-fields input[type='checkbox'],
+.drd-consent-fields input[type='radio'] {
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0.1875rem 0 0;
+    accent-color: currentColor;
+    cursor: pointer;
+}
+
+.drd-consent-field > span {
+    display: grid;
+    gap: 0.125rem;
+}
+
+.drd-consent-field strong {
+    font-weight: 600;
+}
+
+.drd-consent-field small,
+.drd-consent-note {
+    font-size: 0.8125rem;
+    opacity: 0.75;
+}
+
+.drd-consent-error {
+    padding-left: 0.625rem;
+    border-left: 3px solid var(--drd-error, #dc3535);
+    color: var(--drd-error, #dc3535);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
