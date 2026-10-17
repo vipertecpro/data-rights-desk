@@ -2,7 +2,7 @@
 
 All notable changes to this package are written here. It follows Semantic Versioning.
 
-## 1.2.0 - unreleased
+## 1.2.0 - 2026-10-17
 
 ### Added
 
