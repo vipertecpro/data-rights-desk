@@ -4,6 +4,7 @@ namespace Vipertecpro\DataRightsDesk\Console;
 
 use Illuminate\Console\Command;
 use Vipertecpro\DataRightsDesk\DataRightsManager;
+use Vipertecpro\DataRightsDesk\Support\LegalSources;
 
 class CheckCommand extends Command
 {
@@ -16,7 +17,7 @@ class CheckCommand extends Command
         $report = $dataRights->check();
 
         if ($this->option('json')) {
-            $this->line((string) json_encode($report->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            $this->line((string) json_encode([...$report->toArray(), 'legal_sources' => ['sources' => LegalSources::SOURCES, 'checked_on' => LegalSources::CHECKED_ON]], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
             return $report->passed() ? self::SUCCESS : self::FAILURE;
         }
@@ -32,6 +33,7 @@ class CheckCommand extends Command
         $this->newLine();
         $this->line(count($report->errors()).' error(s), '.count($report->warnings()).' warning(s).');
         $this->line('The checker looks at what this package can see. It is not legal advice.');
+        $this->line(LegalSources::summary());
 
         return $report->passed() ? self::SUCCESS : self::FAILURE;
     }
