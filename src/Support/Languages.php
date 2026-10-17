@@ -56,6 +56,14 @@ final class Languages
         return LanguageStatus::tryFrom((string) (self::meta($locale)['status'] ?? 'needed')) ?? LanguageStatus::Needed;
     }
 
+    /** Who wrote the text: "ai-draft" when it was drafted with AI and no fluent reader has checked it yet. */
+    public static function source(string $locale): ?string
+    {
+        $source = self::meta($locale)['source'] ?? null;
+
+        return is_string($source) && $source !== '' ? $source : null;
+    }
+
     public static function nativeName(string $locale): string
     {
         return (string) (self::meta($locale)['name'] ?? $locale);

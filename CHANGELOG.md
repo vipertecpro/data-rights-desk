@@ -2,6 +2,21 @@
 
 All notable changes to this package are written here. It follows Semantic Versioning.
 
+## 1.3.0 - unreleased
+
+### Added
+
+- **All 22 languages of the Eighth Schedule** (section 5(3)): the package's text in Assamese, Bengali, Bodo, Dogri, Gujarati, Kannada, Kashmiri, Konkani, Maithili, Malayalam, Manipuri, Marathi, Nepali, Odia, Punjabi, Sanskrit, Santali, Sindhi, Tamil, Telugu and Urdu, next to English and Hindi. They are AI drafts that no fluent reader has checked yet: each has the status `needs_review` and the source `ai-draft`, and the checker says so. `docs/translations.md` lists what to check first in each language.
+- **Hindi legal terms from the gazette**: the Hindi text now uses the terms of the Hindi text of the DPDP Rules in the Gazette of India (for example "वैयक्तिक डेटा", "नोटिस", "डेटा फ़िड्युसरी", "डेटा प्रिंसिपल").
+- **Guidelines and a setup skill for Laravel Boost**, so AI coding tools set the package up the right way.
+- **The gazette texts the package follows**, with the date they were checked, at the end of `data-rights:check` (and as `legal_sources` in `--json`) and on the dashboard's Check page.
+- **README sections**: "If your app already has consent or privacy features", "Changing how it works", "When the law changes" and "Using it with AI coding tools".
+- **Tests** that every offered language has every English string and keeps every `:placeholder`.
+
+### Upgrading from 1.2
+
+- Nothing is required. If you offer Hindi, the Hindi text of the notice changed, so the checker reports your published notice as out of date: run `php artisan data-rights:notice`.
+
 ## 1.2.1 - 2026-10-17
 
 ### Fixed

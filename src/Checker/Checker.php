@@ -129,7 +129,9 @@ class Checker
         foreach (Languages::offered() as $locale) {
             if (Languages::status($locale) === LanguageStatus::NeedsReview) {
                 $name = Languages::englishName($locale);
-                $this->warning('locale_needs_review', "s.5(3): the {$name} text ({$locale}) is marked needs_review. Have a fluent speaker review the {$name} text before you rely on it.");
+                $this->warning('locale_needs_review', Languages::source($locale) === 'ai-draft'
+                    ? "s.5(3): the {$name} text ({$locale}) was drafted with AI and no fluent reader has checked it yet. Have a fluent speaker review the {$name} text before you rely on it."
+                    : "s.5(3): the {$name} text ({$locale}) is marked needs_review. Have a fluent speaker review the {$name} text before you rely on it.");
             }
         }
 

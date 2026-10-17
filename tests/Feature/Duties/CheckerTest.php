@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 use Vipertecpro\DataRightsDesk\Contracts\ParentalConsentVerifier;
 use Vipertecpro\DataRightsDesk\Enums\RequestType;
@@ -47,7 +48,13 @@ it('Checker: a clean setup passes and the command exits 0', function () {
         ->and($report->warnings()[0]['message'])->toContain('Have a fluent speaker review the Hindi text before you rely on it.')
         ->and($report->passed())->toBeTrue();
 
-    $this->artisan('data-rights:check')->expectsOutputToContain('0 error(s), 1 warning(s).')->assertExitCode(0);
+    $this->artisan('data-rights:check')
+        ->expectsOutputToContain('0 error(s), 1 warning(s).')
+        ->expectsOutputToContain('Follows: Digital Personal Data Protection Act, 2023')
+        ->assertExitCode(0);
+
+    Artisan::call('data-rights:check', ['--json' => true]);
+    expect(json_decode(Artisan::output(), true)['legal_sources']['sources'])->toContain('Digital Personal Data Protection Rules, 2025, G.S.R. 846(E) of 13 Nov 2025');
 });
 
 it('Checker: errors for missing contact, missing or stale notice, needed locale, response days, overdue requests and late breach reports', function () {

@@ -428,6 +428,30 @@ The retention keeper works in this order:
 
 Inactivity erasure is off by default. It is for the three classes that the Third Schedule names: e-commerce entities with at least two crore registered users in India, online gaming intermediaries with at least fifty lakh, and social media intermediaries with at least two crore. The package cannot tell whether you are one of them. You turn it on.
 
+## If your app already has consent or privacy features
+
+The package adds to what you have. It does not replace it.
+
+- **Consent you already collected.** Record each one with its original date: `DataRights::consents()->importLegacy($user, 'marketing', $givenAt)`. The ledger marks it as imported.
+- **Your own consent column**, such as `users.newsletter`. Keep one source of truth. Either replace your checks with `DataRights::allows()`, or keep the column in step with the `ConsentGiven` and `ConsentWithdrawn` events.
+- **Your own "delete my account" or "download my data" feature.** Keep it, and call it from your Eraser or Exporter so a request through the package does the same work. Or switch the public pages off (`routes.public.enabled`) and build your screens on the PHP API or the JSON feed.
+- **Your privacy policy and cookie banner** stay as they are. Link the DPDP notice from your privacy policy, and keep the two consistent.
+
+## Changing how it works
+
+- **Settings**: everything in `config/data-rights.php`, including the routes, their prefixes and middleware, the sign-in guard, the languages, the notification channels and the checker.
+- **Text and pages**: publish the language files (`--tag=data-rights-lang`) or the views (`--tag=data-rights-views`) and edit them.
+- **Your own checks**: bind your own `IdentityVerifier`, `ParentalConsentVerifier` or `ConsentManagerGateway`.
+- **The package's own classes**: each service is a singleton in Laravel's container, so you can replace one with a subclass in a service provider's `register()` method. The services are `PurposeRegistry`, `NoticeBuilder`, `NoticeRepository`, `ChildGuard`, `ConsentLedger`, `RequestDesk`, `NominationBook`, `BreachDesk`, `RetentionKeeper` and `Checker`. For example, to change how the notice is laid out:
+
+```php
+$this->app->singleton(\Vipertecpro\DataRightsDesk\Notices\NoticeBuilder::class, \App\DataRights\MyNoticeBuilder::class);
+```
+
+A subclass depends on the package's internals, so check it after each update.
+
+What you cannot change are the legal minimums: replies within 90 days at most, records kept for at least 365 days, no ticked boxes, and no tracking of children.
+
 ## What it stores, and for how long
 
 The package does not copy your users' names or emails. It stores the type and id of the person (your user model) and reads the rest from your tables. The exceptions are the fields marked encrypted below, such as a nominee's name and contact, a guardian's name, and the text a person types into a request. These are the tables it creates. "Encrypted" means Laravel's encrypted cast, so the raw value in the database differs from the text.
@@ -491,9 +515,25 @@ Your own tables are not touched. The Exporters and Erasers that you write decide
 
 ## Languages
 
-English is ready. Hindi is written and under review. The other 21 languages of the Eighth Schedule (Assamese, Bengali, Bodo, Dogri, Gujarati, Kannada, Kashmiri, Konkani, Maithili, Malayalam, Manipuri, Marathi, Nepali, Odia, Punjabi, Sanskrit, Santali, Sindhi, Tamil, Telugu and Urdu) need translation. Each has a `meta.php` file with the status `needed`. A language with that status cannot be offered.
+English is ready. The package's text is also there in all 22 languages of the Eighth Schedule: Hindi, Assamese, Bengali, Bodo, Dogri, Gujarati, Kannada, Kashmiri, Konkani, Maithili, Malayalam, Manipuri, Marathi, Nepali, Odia, Punjabi, Sanskrit, Santali, Sindhi, Tamil, Telugu and Urdu. They are drafts. I drafted them with AI from the English text, and the legal terms follow the Hindi text of the DPDP Rules published in the Gazette of India. No fluent reader has checked them yet, so each one has the status `needs_review` and the source `ai-draft` in its `meta.php`. You can offer them, and the checker warns until you mark a language `ready` after a fluent reader has checked it.
 
-To add one, publish the language files with `php artisan vendor:publish --tag=data-rights-lang`. In `lang/vendor/data-rights/{code}/`, translate `notice.php`, `public.php` and `mail.php`, and set `status` in `meta.php`. Then add the code to `locales` in the config, add the language to your purposes, and run `php artisan data-rights:notice`. The `docs/translations.md` file included in the package has the steps and the list of Hindi strings that still need a fluent reader.
+Manipuri is in Meitei Mayek, Santali in Ol Chiki, and Kashmiri, Sindhi and Urdu in Perso-Arabic script, written right to left. The package's text is only part of the notice: the text of your own purposes is yours to translate.
+
+To change a language, publish the language files with `php artisan vendor:publish --tag=data-rights-lang`. In `lang/vendor/data-rights/{code}/`, translate `notice.php`, `public.php` and `mail.php`, and set `status` in `meta.php`. Then add the code to `locales` in the config, add the language to your purposes, and run `php artisan data-rights:notice`. The `docs/translations.md` file included in the package has the steps and, for each language, the points a fluent reader should check first.
+
+## When the law changes
+
+The package follows the gazette texts that `php artisan data-rights:check` lists at the end of its report, with the date they were last checked. When the government changes the Act or the Rules, I release a new version:
+
+- A change of wording in the notice makes the checker report your published notice as out of date. Run `php artisan data-rights:notice` to publish the next version. Consent already given stays tied to the version the person saw, and `php artisan data-rights:notify-existing` sends the new version to your users.
+- A change to a time limit or a schedule changes the package's limits. Stricter settings that you chose yourself, such as a shorter reply time, keep working.
+- Each release says in the changelog which provision changed and what you need to do.
+
+Keep the package updated with `composer update vipertecpro/data-rights-desk`, and watch the repository's releases on GitHub. Until a release is out, you can tighten your own settings at once.
+
+## Using it with AI coding tools
+
+The package ships guidelines and a setup skill for Laravel Boost. If your app uses Boost, run `php artisan boost:install` after installing the package, and Claude Code, Cursor and the other agents Boost supports get the instructions: ask the owner for the purposes and the contact details, never call the app compliant, cover every table with personal data, and run `php artisan data-rights:check --json` until it shows no errors. Without Boost, point your agent at `vendor/vipertecpro/data-rights-desk/resources/boost/skills/data-rights-desk-setup/SKILL.md`.
 
 ## Testing
 

@@ -7,6 +7,7 @@
         <div>
             <h1>Check</h1>
             <p class="drd-lead">{{ count($report->errors()) }} errors, {{ count($report->warnings()) }} warnings. The checker looks at what this package can see. It is not legal advice.</p>
+            <p class="drd-muted">{{ \Vipertecpro\DataRightsDesk\Support\LegalSources::summary() }}</p>
         </div>
         <a class="drd-button drd-button--primary" href="{{ route('data-rights-desk.check') }}">Run again</a>
     </div>
