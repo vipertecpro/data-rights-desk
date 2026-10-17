@@ -4,6 +4,7 @@ namespace Vipertecpro\DataRightsDesk\Support;
 
 use Vipertecpro\DataRightsDesk\Contracts\Eraser;
 use Vipertecpro\DataRightsDesk\Contracts\Exporter;
+use Vipertecpro\DataRightsDesk\Contracts\PurposeEraser;
 
 /**
  * The app's Exporter and Eraser classes from config('data-rights.sources').
@@ -36,5 +37,14 @@ final class Sources
     public static function erasers(): array
     {
         return array_values(array_filter(self::all(), fn (object $source): bool => $source instanceof Eraser));
+    }
+
+    /** @return list<PurposeEraser> */
+    public static function purposeErasersFor(string $purpose): array
+    {
+        return array_values(array_filter(
+            self::all(),
+            fn (object $source): bool => $source instanceof PurposeEraser && in_array($purpose, $source->purposes(), true),
+        ));
     }
 }

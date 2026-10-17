@@ -22,7 +22,7 @@ I built Data Rights Desk and I maintain it. It is free and MIT licensed.
 - **A breach register** with drafts of the alert to the Board, the 72-hour report, and the message to each affected person.
 - **Children**: an age question, parent or guardian consent through a check that you provide, and no tracking of children.
 - **A contact block** on the rights page, in the notice and in every email.
-- **A processor register.**
+- **A processor register**, and the list of processors to tell when a person withdraws consent or is erased.
 - **A dashboard** for staff and **a checker** that looks for gaps.
 
 The package makes no outbound HTTP calls of its own. It loads no fonts, scripts or analytics. Emails go out through your app's own mail setup.
@@ -61,7 +61,7 @@ This writes `config/data-rights.php` and the migrations into your app, then prin
 php artisan migrate
 ```
 
-Every table starts with `data_rights_` and uses ULID primary keys. The columns that point at a person use Laravel's `morphs`. If your user table uses UUID or ULID keys, call `Schema::morphUsingUuids()` (or `Schema::morphUsingUlids()`) in a service provider before you migrate.
+Every table starts with `data_rights_` and uses ULID primary keys. The columns that point at a person use Laravel's `morphs`. If your user ids are UUIDs or ULIDs, set `'morph_key_type' => 'uuid'` (or `'ulid'`) in `config/data-rights.php` before you migrate. It changes only the package's tables. The install command tells you when your user model needs it.
 
 **4. Add the trait to your user model.**
 
@@ -70,17 +70,18 @@ use Vipertecpro\DataRightsDesk\Concerns\HasDataRights;
 
 class User extends Authenticatable
 {
-    use HasDataRights;
+    use HasFactory, Notifiable, HasDataRights; // add it to the traits your model already uses
 }
 ```
 
-If your people are not `App\Models\User`, set `DATA_RIGHTS_SUBJECT_MODEL` in `.env`. The email column is `email` unless you change `subject_email_column`.
+If your people are not `App\Models\User`, set `DATA_RIGHTS_SUBJECT_MODEL` in `.env`. The email column is `email` unless you change `subject_email_column`. The package's emails go to that column.
 
-The trait gives the model the `dataRightsConsents()`, `dataRightsRequests()` and `dataRightsProfile()` relations and a `consentsTo($purpose)` method. When the model is deleted, the trait marks the person as erased. When a soft-deleted model is restored, it clears that mark.
+The trait gives the model the `dataRightsConsents()`, `dataRightsRequests()` and `dataRightsProfile()` relations and a `consentsTo($purpose)` method. When the model is deleted, the trait marks the person as erased. A soft delete does not count, because the row and its data are still there. A force delete does.
 
-**5. Set the contact details in `.env`.**
+**5. Set your site's address and the contact details in `.env`.**
 
 ```
+APP_URL=
 DATA_RIGHTS_BUSINESS_NAME="Your business"
 DATA_RIGHTS_CONTACT_NAME="Name of the person who answers"
 DATA_RIGHTS_CONTACT_ROLE="Grievance officer"
@@ -90,11 +91,11 @@ DATA_RIGHTS_CONTACT_ADDRESS=
 DATA_RIGHTS_BOARD_URL=
 ```
 
-Fill in the email or the phone, or both. The checker reports an error without one. The business name falls back to `APP_NAME`. Leave `DATA_RIGHTS_BOARD_URL` empty until the Board publishes a way to complain. The notice then describes the route without a link.
+`APP_URL` is your site's full address. The notice and the emails are built with it, so set it before step 7. The checker warns while it points at localhost, and reports an error in production. Fill in the email or the phone, or both. The checker reports an error without one. The business name falls back to `APP_NAME`. Leave `DATA_RIGHTS_BOARD_URL` empty until the Board publishes a way to complain. The notice then describes the route without a link.
 
 **6. Replace the example purposes.**
 
-Open `config/data-rights.php`. It ships three example purposes, in English and Hindi. Replace them with your own. The checker warns while the examples are unchanged. One purpose looks like this:
+Open `config/data-rights.php`. It ships three example purposes, `account`, `marketing` and `analytics`, in English and Hindi. Replace them with your own. The checker warns while the examples are unchanged. One purpose looks like this:
 
 ```php
 'orders' => [
@@ -112,8 +113,22 @@ Open `config/data-rights.php`. It ships three example purposes, in English and H
 
 - `basis` is `consent` (section 6) or `legitimate_use` (section 7). For `legitimate_use`, set `legitimate_use` to the clause, `a` to `i`.
 - `tracking` is `true` when the purpose tracks people, monitors their behaviour or targets advertising. Without a Fourth Schedule key, it is never allowed for children.
-- `fourth_schedule` takes a key from `A1` to `A5` or `B1` to `B6`. Use it only after you have checked that the Schedule's condition is met for that purpose.
+- `fourth_schedule` takes a key from the Fourth Schedule of the Rules (the table below). Use it only after you have checked that the Schedule's condition is met for that purpose. The full text of each entry is in `src/Support/FourthSchedule.php`.
 - A text field takes a plain string (for your default language) or an array with one entry per language.
+
+| Key | Who or what it covers |
+| --- | --- |
+| `A1` | A clinical establishment, mental health establishment or healthcare professional, for health services to the child |
+| `A2` | An allied healthcare professional, for the child's treatment and referral plan |
+| `A3` | An educational institution, for its educational activities or the safety of its children |
+| `A4` | A crèche or child day care centre, for the safety of the children in its care |
+| `A5` | Transport engaged by a school, crèche or centre, for tracking the children's location during the trip |
+| `B1` | Duties under a law in India, in the interests of a child |
+| `B2` | A subsidy, benefit, service, certificate, licence or permit for a child, under section 7(b) |
+| `B3` | A user account used only for email |
+| `B4` | The child's real-time location, for her safety |
+| `B5` | Keeping harmful information, services or advertisements away from the child |
+| `B6` | Confirming that a person is not a child, and the checks of Rule 10 |
 
 The package does not choose your purposes or your legal basis. That decision is yours.
 
@@ -132,10 +147,10 @@ This builds the notice in every offered language and publishes version 1. Run it
 ```php
 use Illuminate\Support\Facades\Gate;
 
-Gate::define('viewDataRightsDesk', fn ($user) => $user->is_admin);
+Gate::define('viewDataRightsDesk', fn ($user) => in_array($user->email, ['you@your-site.example'], true));
 ```
 
-Put it in a service provider's `boot` method. Until you define it, the dashboard opens only when the app runs in the `local` environment, like Horizon. The checker warns if production still uses that default.
+Put it in a service provider's `boot` method. Use your own check if you have roles. Until you define it, the dashboard opens only when the app runs in the `local` environment, like Horizon. The checker warns if production still uses that default.
 
 **9. Write a source for each part of your app that holds personal data.**
 
@@ -148,13 +163,21 @@ This creates `app/DataRights/Orders.php`. It implements two contracts:
 - `Exporter` gives the rows you hold about a person. They go into the data summary.
 - `Eraser` erases them, and says what it kept and why.
 
-Fill in `tables()`, `processing()`, `export()` and `erase()`. Skip records where `$context->isHeld($record)` is true, because a legal hold covers them. Report what another law makes you keep with `ErasureOutcome::retained($count, 'reason', $until)`. The reason is shown to the person and stored in the request result, so keep personal data out of it. Without at least one Eraser in `sources`, an erasure request cannot be carried out: Erase refuses and tells the person nothing, and the checker reports an error. Then add the class to `sources` in the config:
+Fill in `name()`, `tables()`, `processing()`, `export()` and `erase()`. For your users table, `erase()` deletes (or force-deletes) the user row, and the package then marks the person erased. Skip records where `$context->isHeld($record)` is true, because a legal hold covers them. Return `ErasureOutcome::erased($count)` for what you erased, `ErasureOutcome::retained($count, 'reason', $until)` for what another law makes you keep, or `ErasureOutcome::nothing()`. `$outcome->and($other)` combines two. The reason is shown to the person and stored in the request result, so keep personal data out of it. Without at least one Eraser in `sources`, an erasure request cannot be carried out: Erase refuses and tells the person nothing, and the checker reports an error. Then add the class to `sources` in the config:
 
 ```php
 'sources' => [
     App\DataRights\Orders::class,
 ],
 ```
+
+For data you keep only for one consent purpose, such as a mailing list for `marketing`, add a PurposeEraser too:
+
+```
+php artisan data-rights:make-source Newsletter --purpose=marketing
+```
+
+When the person withdraws consent for that purpose, it runs on the queue and erases that data (section 8(7)(a)). The result goes into her processing log. List it in `sources` like the others.
 
 **10. Schedule the retention keeper.**
 
@@ -174,8 +197,8 @@ php artisan data-rights:check
 
 It exits with code 1 when it finds an error, so you can run it in CI. `--json` prints the report as JSON.
 
-- **Errors**: no contact, no notice or an out-of-date one, a listed language that has no translation, `response_days` above 90, requests past their due date, a breach past its 72-hour report time with no report marked as sent, no Eraser in `sources`.
-- **Warnings**: `keep_days` below 365, Hindi not offered, an offered language still marked `needs_review` (the shipped Hindi is, until a fluent speaker has read it), an empty Board URL, the example purposes unchanged, a table with personal columns that no source or retention model covers, a purpose that needs consent but that your code never checks, a processor with no contract reference or security clause, children checks on with no parent check bound, and the default gate in production.
+- **Errors**: no contact, no notice or an out-of-date one, a listed language that has no translation, `response_days` above 90, requests past their due date, a breach past its 72-hour report time with no report marked as sent, no Eraser in `sources`, an app route that hides a package page or reuses a package route name, no route named `login`, and `APP_URL` pointing at localhost in production.
+- **Warnings**: `keep_days` below 365, Hindi not offered, an offered language still marked `needs_review` (the shipped Hindi is, until a fluent speaker has read it), an empty Board URL, the example purposes unchanged, a table with personal columns that no source or retention model covers, a purpose that needs consent but that your code never checks, a processor with no contract reference or security clause, children checks on with no parent check bound, the default gate in production, `APP_URL` pointing at localhost, a table that a common package fills with personal data (such as `activity_log` or `telescope_entries`), and a consent purpose with no PurposeEraser.
 
 The checker looks at what the package can see. It cannot tell whether your app meets the Act.
 
@@ -211,18 +234,22 @@ If you build your own screens, `DataRights::give($user, 'marketing', [...])` and
 **At sign-up.** Put the consent box in your registration form. It shows the notice link and one unticked box per purpose that needs consent:
 
 ```blade
-<x-data-rights::consent-fields :required="['account']" />
+<x-data-rights::consent-fields :required="['account']" ask-age />
 ```
+
+`account` is the example purpose from the shipped config. Use the keys of your own purposes. A key that is not in your config, or one that does not need consent, stops the page with an error, so a typo shows at once. `ask-age` adds the age question (section 9(1)). Leave it out if children cannot sign up. The box shows its own validation messages.
 
 Then record the ticked purposes when you create the user. The record names the notice version the form showed. In a Fortify app this goes in `app/Actions/Fortify/CreateNewUser.php`:
 
 ```php
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
+use Vipertecpro\DataRightsDesk\Rules\AnswersAge;
 use Vipertecpro\DataRightsDesk\Rules\IncludesPurpose;
 
 Validator::make($input, [
     // your other rules
-    'data_rights.purposes' => ['required', 'array', new IncludesPurpose('account')],
+    'data_rights.purposes' => [new IncludesPurpose('account')],
+    'data_rights.age' => [new AnswersAge], // only with ask-age
 ])->validate();
 
 $user = User::create([/* ... */]);
@@ -230,7 +257,13 @@ $user = User::create([/* ... */]);
 DataRights::giveFromForm($user, $input); // or pass the Request
 ```
 
-Which purposes your sign-up needs is your decision. Leave out `:required` and the rule if none is needed. With React, Vue or Svelte, post `data_rights[purposes][]`, `data_rights[notice]` and `data_rights[locale]` from your own form (the notice comes from `/data-rights/api/notice`), then call the same `giveFromForm()`.
+`IncludesPurpose` fails when the box is not ticked, including when nothing at all is ticked. `AnswersAge` fails until the age question is answered. Both show the package's own message, in the person's language. Which purposes your sign-up needs is your decision. Leave out `:required` and the rule if none is needed.
+
+`giveFromForm()` records the age answer first. For a person who says she is under 18, her own ticks are not recorded as consent: they wait for a parent. After sign-up, send her to `/data-rights/preferences` when `DataRights::children()->needsGuardianConsent($user)` is true. Purposes that are not in your config, or that do not need consent, are ignored.
+
+`giveFromForm()` throws `NoticeMissing` when no notice is published, and `IncludesPurpose` then fails, so the account is not created without consent. Publish the notice before you open sign-ups. Your app's own registration test starts with an empty database and posts the form without the box: publish the notice first with `DataRights::notices()->publish()`, and add `'data_rights' => ['purposes' => ['account'], 'age' => 'adult']` to its data.
+
+With React, Vue, Svelte or a mobile app, `GET /data-rights/api/notice` gives the notice id and the purposes to show. Post the ticked keys as `data_rights[purposes][]`, the notice id as `data_rights[notice]` and its locale as `data_rights[locale]` with your own sign-up call, then call the same `giveFromForm()`.
 
 **On a route:**
 
@@ -262,11 +295,13 @@ use Vipertecpro\DataRightsDesk\Events\ConsentWithdrawn;
 
 Event::listen(ConsentWithdrawn::class, function (ConsentWithdrawn $event) {
     // $event->subject, $event->purpose, $event->record
-    // Stop the processing, and tell the processors that work for you.
+    foreach ($event->processors() as $processor) {
+        // $processor['name'], $processor['data_shared']: tell it to stop and erase.
+    }
 });
 ```
 
-The events are `ConsentGiven`, `ConsentWithdrawn`, `NoticePublished`, `RequestReceived`, `RequestStatusChanged`, `PersonalDataErased`, `BreachRecorded`, `ErasureWarningSent` and `GuardianConsentRecorded`. Stopping processing after a withdrawal is your app's job. The package tells you and keeps the record.
+The events are `ConsentGiven`, `ConsentWithdrawn`, `PurposeDataErased`, `NoticePublished`, `RequestReceived`, `RequestStatusChanged`, `PersonalDataErased`, `BreachRecorded`, `ErasureWarningSent` and `GuardianConsentRecorded`. After a withdrawal, the package runs your PurposeEraser sources for that purpose and fires `PurposeDataErased` with the result. `$event->processors()` lists the processors in your register that got data for the purpose, so you can tell each one to stop and erase it (sections 6(6) and 8(7)(b)). The page of an erasure request in the dashboard lists them too. Stopping your own processing is your app's job.
 
 **Children.** When `children.enabled` is true (the default), the consent choices page asks whether the person is 18 or older and stores only that answer. The answer is locked once given; staff can correct it on the Children page of the dashboard, with a note that is stored encrypted. For someone under 18, a parent must confirm before any purpose is allowed. The package cannot check a parent. Write a class that implements `ParentalConsentVerifier`, and bind it:
 
@@ -333,7 +368,11 @@ All paths below use the default prefixes. Change them, or switch a group off, un
 | `/data-rights/requests` | yes | The person's requests, a new request form and nominations |
 | `/data-rights/requests/{request}` | yes, own | One request: its status, the reply, a cancel button, and a download of the data summary for a completed access request |
 
-JSON for apps with their own screens is under `/data-rights/api`. The notice needs no sign-in. The purposes, consent, withdrawal and requests need one. Creating a request is limited to six a minute for each person.
+The signed-in pages use Laravel's `auth` middleware. If your people sign in on another guard, set `routes.public.auth` to, for example, `auth:customer`. A guest is sent to your route named `login`. If your app has none (a Filament-only app, for example), call `$middleware->redirectGuestsTo('/admin/login')` in `bootstrap/app.php`, or guests get an error page. The checker reports it.
+
+Your app's routes win over the package's when they use the same address, and two routes with one name break `php artisan route:cache`. The checker reports both. To move the package, change the prefixes under `routes`.
+
+JSON for apps with their own screens is under `/data-rights/api`. The notice needs no sign-in. The purposes, consent, withdrawal and requests need one. Consent changes are limited to 30 a minute for each person, and new requests to six. The `docs/api.md` file included in the package lists every call with a real response.
 
 By default the JSON feed uses the browser session, which suits Blade, Livewire and Inertia pages on the same site. A mobile app, including one built with NativePHP, signs in with a token instead. Install Laravel Sanctum (`php artisan install:api`, then add `HasApiTokens` to your user model) and set this in `config/data-rights.php`:
 
@@ -344,7 +383,7 @@ By default the JSON feed uses the browser session, which suits Blade, Livewire a
 ],
 ```
 
-The app then sends `Authorization: Bearer <token>` with every call, and consent given this way is recorded with the channel `api`. In this mode the feed expects a token on every call, including from your own web pages. The JSON feed works even when the public pages are switched off.
+Your app gives the token when the person signs in (`docs/api.md` shows the usual Sanctum route for it). The app then sends `Authorization: Bearer <token>` and `Accept: application/json` with every call, and consent given this way is recorded with the channel `api`. In this mode the feed expects a token on every call, including from your own web pages. The JSON feed works even when the public pages are switched off.
 
 **Dashboard** (prefix `data-rights-desk`, middleware `web` and `auth`, plus the `viewDataRightsDesk` gate on every route):
 
@@ -368,14 +407,14 @@ The public pages are plain Blade with one hand-written stylesheet. They follow t
 
 | Command | What it does |
 | --- | --- |
-| `php artisan data-rights:install` | Publishes the config and the migrations, and prints the next steps |
+| `php artisan data-rights:install` | Publishes the config and the migrations, checks your app for settings it needs, and prints the next steps. Running it again copies nothing twice |
 | `php artisan data-rights:notice` | Builds the notice in every offered language and publishes a new version when any of them changed. It refuses and names what is missing when a language or a purpose text is incomplete. `--pretend` changes nothing |
 | `php artisan data-rights:notify-existing` | Sends the current notice once to each person created before `--before` (default 2027-05-13) who has not had it. `--chunk` sets the batch size. `--pretend` only counts |
 | `php artisan data-rights:retain` | Runs the retention keeper and records the run. `--pretend` counts and changes nothing |
 | `php artisan data-rights:proof {email}` | Writes the consent proof for one person as JSON. `--purpose=` limits it to one purpose. `--output=` writes it to a file |
 | `php artisan data-rights:breach-draft {breach} {kind=report}` | Prints the `alert`, `report` or `person` draft for a breach (use the breach id). `--lang=` sets the language of the person draft |
 | `php artisan data-rights:check` | Runs the checker. Exit code 1 on errors. `--json` prints JSON |
-| `php artisan data-rights:make-source {name}` | Creates an Exporter and Eraser class in `app/DataRights` |
+| `php artisan data-rights:make-source {name}` | Creates an Exporter and Eraser class in `app/DataRights`. With `--purpose=marketing`, it creates a PurposeEraser for that purpose instead |
 
 The retention keeper works in this order:
 
@@ -410,7 +449,7 @@ The package does not copy your users' names or emails. It stores the type and id
 | `data_rights_breach_subjects` | Which people a breach affected, whether and when each was told | none | Until `keep_days` after the person is erased |
 | `data_rights_legal_holds` | What is held, why, the law reference, who placed it, dates | `reason` | The package never deletes holds. A released hold stays as a record |
 | `data_rights_retention_runs` | When the keeper ran and the counts | none | The package never deletes them |
-| `data_rights_processing_logs` | The person, the purpose, a short activity label (up to 120 characters) and the time | none | Deleted when older than `keep_days`, unless the person is on legal hold |
+| `data_rights_processing_logs` | The person, the purpose, a short activity label (up to 120 characters) and the time. After a withdrawal, a line with the erasure counts | none | Deleted when older than `keep_days`, unless the person is on legal hold |
 
 The IP address and the user agent of a consent are off by default (`consent.record_ip` and `consent.record_user_agent`). When you turn them on they are stored in plain text. The package never stores a birth date, and it writes no personal data to your logs.
 
@@ -440,7 +479,12 @@ Your own tables are not touched. The Exporters and Erasers that you write decide
 - It does not cover the extra duties of a Significant Data Fiduciary, such as impact assessments and audits.
 - It does not cover the rules on transfers of data outside India.
 - It does not erase data from places it cannot see. Your Erasers must cover your tables, backups, logs, search indexes and the third parties you use.
-- It does not stop your processors. It fires `ConsentWithdrawn`, and you act on it.
+- It does not contact your processors. It lists the ones that got data for a purpose, and you tell them.
+- It does not secure the rest of your app. Rule 6 asks for safeguards such as encryption, access control, monitoring and backups for all the personal data you hold. The package covers only its own tables.
+- It does not handle consent for visitors who are not signed in, such as a cookie banner.
+- It does not judge whether your processing could harm a child (section 9(2)). It blocks tracking of children. The rest is your decision.
+- It does not answer requests for information from the government (Rule 22 and the Seventh Schedule).
+- It keeps one notice and one dashboard per app. In a multi-tenant app on one database, every tenant shares them.
 - It does not find personal data on its own. The checker looks at column names and at calls in your code, never at the data.
 - It has no Filament plugin and no NativePHP bridge.
 - It ships no translations beyond English and Hindi.
@@ -464,7 +508,38 @@ composer ci        # Pint check, PHPStan, Pest, and Pest again with immutable da
 
 Every duty has at least one test, and the test name starts with the section or rule it covers, for example `Rule 7(2):` or `s.6(10):`. The `docs/rules.md` file included in the package maps each feature to its section or rule, with a short quote from the gazette text. It also marks what could not be verified.
 
-The repository has a GitHub Actions file for PHP 8.3, 8.4 and 8.5 with Laravel 12 and 13 on SQLite, MySQL 8 and PostgreSQL 16.
+The repository has a GitHub Actions file for PHP 8.3, 8.4 and 8.5 with Laravel 12 and 13 on SQLite, MySQL 8 and PostgreSQL 16, plus MariaDB 11 and SQL Server 2022 on PHP 8.4.
+
+## Using it alongside GDPR and other laws
+
+I built this package for India's DPDP Act and Rules only. It does not implement the GDPR, the UK GDPR, California's CCPA or any other law, and following it does not mean you meet them.
+
+**Your privacy policy stays.** The DPDP notice the package builds is a separate document on purpose: Rule 3(a) asks for a notice that stands on its own, apart from other information. Keep your privacy policy and your terms. Link to both from your footer and your sign-up page. Make sure they say the same thing about your purposes, the data you collect and your contact details. The package never edits your other documents.
+
+**Nothing in the package overrides another law.** It adds tables, pages and checks. It does not delete data on its own except through the retention job (`data-rights:retain`), which is driven by your config and skips anything on legal hold. Everything else waits for you or your staff.
+
+**Where the settings help an app that also serves Europe:**
+
+- Reply time. The package allows at most 90 days. The GDPR asks for one month (Article 12(3)). Set `requests.response_days` to `30` and every request gets the shorter clock.
+- Breaches. The 72-hour report clock matches the GDPR's (Article 33), but the drafts are written for India's Data Protection Board. Your EU report goes to your supervisory authority in its own format.
+- Access and export. The access summary downloads as JSON, which can also serve a GDPR access or portability request. Check that your Exporters include everything the GDPR asks you to give.
+- Languages. Offer every language your users need in `locales`.
+
+**Where the two laws differ, and the package follows India:**
+
+| Topic | DPDP (what the package does) | GDPR |
+| --- | --- | --- |
+| Legal basis | Consent or the legitimate uses in section 7 only | Six bases, including contract and legitimate interests |
+| Children | Under 18, parent or guardian consent for every purpose | Under 16 (13 to 16 by country) for online services that rely on consent |
+| Breach to people | Every affected person is told | Only when the risk to them is high (Article 34) |
+| Rights | Access, correction, erasure, grievance, nomination | Also objection, restriction and portability, which have no flow here |
+| Logs | Kept at least one year (Rule 8(3)) | Kept no longer than needed (Article 5(1)(e)) |
+
+The package treats every user the same way. It has no country switch. If you want the India flows for some users only, that decision and that code are yours.
+
+**What it does not cover for any law:** cookie consent for visitors who are not signed in. Keep your own cookie banner.
+
+**When the laws pull in different directions,** for example how long to keep logs, ask a lawyer who knows both. This section is a starting point, not legal advice.
 
 ## Not legal advice
 

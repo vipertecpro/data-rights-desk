@@ -4,6 +4,7 @@ namespace Vipertecpro\DataRightsDesk\Requests;
 
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification as Notifier;
 use Vipertecpro\DataRightsDesk\Consents\ConsentLedger;
@@ -186,29 +187,7 @@ class RequestDesk
 
         $current = $this->consents->current($subject);
         $history = $this->consents->history($subject);
-        $personPurposes = [];
-
-        foreach (array_keys($current) as $purpose) {
-            if ($this->consents->allows($subject, $purpose)) {
-                $personPurposes[] = $purpose;
-            }
-        }
-
-        // s.11(1)(b): sharing that already happened counts, so every purpose she
-        // ever gave consent to is included, not only the ones she allows today.
-        foreach ($history as $record) {
-            if ($record->isGiven()) {
-                $personPurposes[] = $record->purpose;
-            }
-        }
-
-        foreach ($logs as $log) {
-            if ($this->purposes->has($log->purpose)) {
-                $personPurposes[] = $log->purpose;
-            }
-        }
-
-        $personPurposes = array_values(array_unique($personPurposes));
+        $personPurposes = $this->personPurposes($subject, $logs);
 
         $sharedWith = Processor::query()
             ->active()
@@ -252,6 +231,41 @@ class RequestDesk
             'shared_with' => $sharedWith,
             'contact' => Contact::details(),
         ];
+    }
+
+    /**
+     * The purposes the person's data was used for: those she allows today, every purpose she
+     * ever gave consent to (s.11(1)(b): sharing that already happened counts) and the purposes
+     * in her processing log.
+     *
+     * @param  Collection<int, ProcessingLog>|null  $logs
+     * @return list<string>
+     */
+    private function personPurposes(Model $subject, ?Collection $logs = null): array
+    {
+        $purposes = [];
+
+        foreach (array_keys($this->consents->current($subject)) as $purpose) {
+            if ($this->consents->allows($subject, $purpose)) {
+                $purposes[] = $purpose;
+            }
+        }
+
+        foreach ($this->consents->history($subject) as $record) {
+            if ($record->isGiven()) {
+                $purposes[] = $record->purpose;
+            }
+        }
+
+        $logs ??= ProcessingLog::query()->forSubject($subject)->get();
+
+        foreach ($logs as $log) {
+            if ($this->purposes->has($log->purpose)) {
+                $purposes[] = $log->purpose;
+            }
+        }
+
+        return array_values(array_unique($purposes));
     }
 
     /**
@@ -335,6 +349,8 @@ class RequestDesk
             return ErasureReport::blockedByHold($reason);
         }
 
+        // s.8(7)(b): worked out before the Erasers run, while the consent history is still there.
+        $processors = Processor::toTell($this->personPurposes($subject));
         $outcomes = [];
 
         foreach (Sources::erasers() as $eraser) {
@@ -350,7 +366,7 @@ class RequestDesk
             'erasure_due_at' => null,
         ])->save();
 
-        $report = new ErasureReport($reason, $outcomes, false, (int) $nominations);
+        $report = new ErasureReport($reason, $outcomes, false, (int) $nominations, $processors);
 
         DataRightsRequest::query()
             ->forSubject($subject)

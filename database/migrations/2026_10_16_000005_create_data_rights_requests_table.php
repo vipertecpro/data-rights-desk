@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Vipertecpro\DataRightsDesk\Support\Morphs;
 
 return new class extends Migration
 {
@@ -10,7 +11,7 @@ return new class extends Migration
     {
         Schema::create('data_rights_requests', function (Blueprint $table): void {
             $table->ulid('id')->primary();
-            $table->nullableMorphs('subject');
+            Morphs::add($table, 'subject', nullable: true);
             $table->string('type', 32);
             $table->string('status', 32);
             $table->text('details')->nullable();

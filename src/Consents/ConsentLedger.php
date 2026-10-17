@@ -47,7 +47,7 @@ class ConsentLedger
     {
         $definition = $this->purposes->get($purpose);
         $locale = $this->localeFor($subject, $options);
-        $notice = $this->noticeFor($options['notice'] ?? null, $locale);
+        $notice = $this->noticeFor($options['notice'] ?? null, $locale, $purpose);
 
         if ($notice === null) {
             throw NoticeMissing::forLocale($locale);
@@ -262,7 +262,10 @@ class ConsentLedger
 
     /**
      * Consent for several purposes from one form, such as a sign-up form. Only purposes that
-     * need consent are recorded; anything else in the list is ignored.
+     * need consent are recorded; anything else in the list (an unknown or a legitimate-use
+     * purpose posted by the browser) is ignored. For a child, or a person with a lawful
+     * guardian, a purpose without a Fourth Schedule key is recorded only once the parent or
+     * guardian has confirmed, and then as given by them (s.9(1), Rule 11).
      *
      * @param  list<string>  $purposes
      * @param  array{channel?: ConsentChannel|string, locale?: string|null, ip?: string|null, user_agent?: string|null, given_by?: GivenBy|string, guardian_consent?: GuardianConsent|string|null, notice?: Notice|string|null}  $options
@@ -273,30 +276,45 @@ class ConsentLedger
     public function giveMany(Model $subject, array $purposes, array $options = []): array
     {
         $consentBased = $this->purposes->consentBased();
+        $kind = isset($options['given_by']) ? null : $this->children->guardianKindNeeded($subject);
+        $guardianConsent = $kind !== null ? $this->children->activeGuardianConsent($subject, $kind) : null;
         $records = [];
 
         foreach (array_values(array_unique($purposes)) as $key) {
-            if (isset($consentBased[$key])) {
-                $records[] = $this->give($subject, $key, $options);
+            if (! isset($consentBased[$key])) {
+                continue;
             }
+
+            if ($kind !== null && ! $consentBased[$key]->hasChildExemption()) {
+                // The person's own tick is not consent here: it waits for the parent or guardian.
+                if ($guardianConsent !== null) {
+                    $records[] = $this->give($subject, $key, [...$options, 'given_by' => $kind->givenBy(), 'guardian_consent' => $guardianConsent]);
+                }
+
+                continue;
+            }
+
+            $records[] = $this->give($subject, $key, $options);
         }
 
         return $records;
     }
 
-    /** The notice the form showed (s.6(10) proof), or the current one for the locale. */
-    private function noticeFor(Notice|string|null $notice, string $locale): ?Notice
+    /**
+     * The notice the form showed (s.6(10) proof), or the current one for the locale. A posted
+     * notice counts only if it described this purpose, so the proof never points at a notice
+     * that said nothing about it.
+     */
+    private function noticeFor(Notice|string|null $notice, string $locale, string $purpose): ?Notice
     {
-        if ($notice instanceof Notice) {
-            return $notice;
-        }
+        $shown = match (true) {
+            $notice instanceof Notice => $notice,
+            is_string($notice) && $notice !== '' => Notice::query()->find($notice),
+            default => null,
+        };
 
-        if (is_string($notice) && $notice !== '') {
-            $shown = Notice::query()->find($notice);
-
-            if ($shown instanceof Notice) {
-                return $shown;
-            }
+        if ($shown instanceof Notice && array_key_exists($purpose, (array) $shown->purposes)) {
+            return $shown;
         }
 
         return $this->notices->current($locale);
@@ -305,12 +323,7 @@ class ConsentLedger
     /** @param  array<string, mixed>  $options */
     private function localeFor(Model $subject, array $options): string
     {
-        $locale = $options['locale'] ?? null;
-
-        if (is_string($locale) && $locale !== '') {
-            return $locale;
-        }
-
-        return Languages::resolve(Subjects::locale($subject));
+        // A posted locale is user input: only an offered language counts.
+        return Languages::resolve($options['locale'] ?? null, Subjects::locale($subject));
     }
 }

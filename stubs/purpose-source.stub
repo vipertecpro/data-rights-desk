@@ -1,0 +1,31 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Database\Eloquent\Model;
+use Vipertecpro\DataRightsDesk\Contracts\PurposeEraser;
+use Vipertecpro\DataRightsDesk\Support\ErasureContext;
+use Vipertecpro\DataRightsDesk\Support\ErasureOutcome;
+
+/**
+ * s.8(7)(a): erases the data kept only for a purpose when the person withdraws consent for it.
+ * Add this class to 'sources' in config/data-rights.php. It runs on the queue after a withdrawal.
+ */
+class {{ class }} implements PurposeEraser
+{
+    /** @return list<string> */
+    public function purposes(): array
+    {
+        return [{{ purposes }}];
+    }
+
+    public function eraseForPurpose(Model $subject, string $purpose, ErasureContext $context): ErasureOutcome
+    {
+        // TODO: erase what you keep only for $purpose, for example remove the person from your
+        // mailing list for "marketing". Keep anything another purpose or a law still needs, with
+        // ErasureOutcome::retained($count, 'reason'). Return ErasureOutcome::nothing() when you
+        // keep nothing for this purpose. Also tell the processors that got the data
+        // (ConsentWithdrawn::processors() lists them).
+        return ErasureOutcome::nothing();
+    }
+}

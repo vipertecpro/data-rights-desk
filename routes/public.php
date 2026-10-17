@@ -8,7 +8,8 @@ use Vipertecpro\DataRightsDesk\Http\Controllers\RequestController;
 use Vipertecpro\DataRightsDesk\Http\Controllers\RightsPageController;
 
 /*
-| Public pages: prefix and middleware from config('data-rights.routes.public').
+| Public pages: prefix, middleware and sign-in from config('data-rights.routes.public'). Apps
+| whose people sign in on another guard set 'auth' => 'auth:customer'.
 */
 
 $purpose = '[a-z0-9_.-]{1,64}';
@@ -17,10 +18,10 @@ Route::get('/', RightsPageController::class)->name('index');
 Route::get('notice', [NoticePageController::class, 'current'])->name('notice');
 Route::get('notice/{version}', [NoticePageController::class, 'version'])->whereNumber('version')->name('notice.version');
 
-Route::middleware('auth')->group(function () use ($purpose): void {
+Route::middleware((array) config('data-rights.routes.public.auth', 'auth'))->group(function () use ($purpose): void {
     Route::get('preferences', [PreferenceController::class, 'show'])->name('preferences');
-    Route::post('consents/{purpose}', [PreferenceController::class, 'give'])->where('purpose', $purpose)->name('consents.give');
-    Route::delete('consents/{purpose}', [PreferenceController::class, 'withdraw'])->where('purpose', $purpose)->name('consents.withdraw');
+    Route::post('consents/{purpose}', [PreferenceController::class, 'give'])->where('purpose', $purpose)->middleware('throttle:30,1')->name('consents.give');
+    Route::delete('consents/{purpose}', [PreferenceController::class, 'withdraw'])->where('purpose', $purpose)->middleware('throttle:30,1')->name('consents.withdraw');
     Route::post('age', [PreferenceController::class, 'age'])->name('age');
     Route::post('guardian', [PreferenceController::class, 'guardian'])->name('guardian');
 

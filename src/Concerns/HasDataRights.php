@@ -21,6 +21,11 @@ trait HasDataRights
     public static function bootHasDataRights(): void
     {
         $markErased = function (Model $model): void {
+            // A soft delete keeps the row, so the person's data still exists: not erased.
+            if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                return;
+            }
+
             $profile = SubjectProfile::for($model);
 
             if ($profile->erased_at === null) {
@@ -31,7 +36,7 @@ trait HasDataRights
         static::deleted($markErased);
         static::registerModelEvent('forceDeleted', $markErased);
 
-        // A soft-deleted person who is restored is no longer erased.
+        // Profiles marked erased by a soft delete before 1.2 are cleared when the person is restored.
         static::registerModelEvent('restored', function (Model $model): void {
             SubjectProfile::clearErasure($model);
         });

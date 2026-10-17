@@ -13,11 +13,12 @@ $purpose = '[a-z0-9_.-]{1,64}';
 
 Route::get('notice', [ApiController::class, 'notice'])->name('notice');
 
-Route::middleware((string) config('data-rights.routes.api.auth', 'auth'))->group(function () use ($purpose): void {
+Route::middleware((array) config('data-rights.routes.api.auth', 'auth'))->group(function () use ($purpose): void {
     Route::get('purposes', [ApiController::class, 'purposes'])->name('purposes');
-    Route::post('consents/{purpose}', [ApiController::class, 'give'])->where('purpose', $purpose)->name('consents.give');
-    Route::delete('consents/{purpose}', [ApiController::class, 'withdraw'])->where('purpose', $purpose)->name('consents.withdraw');
+    Route::post('consents/{purpose}', [ApiController::class, 'give'])->where('purpose', $purpose)->middleware('throttle:30,1')->name('consents.give');
+    Route::delete('consents/{purpose}', [ApiController::class, 'withdraw'])->where('purpose', $purpose)->middleware('throttle:30,1')->name('consents.withdraw');
     Route::get('requests', [ApiController::class, 'requests'])->name('requests.index');
     Route::post('requests', [ApiController::class, 'storeRequest'])->middleware('throttle:6,1')->name('requests.store');
     Route::get('requests/{request}', [ApiController::class, 'request'])->name('requests.show');
+    Route::get('requests/{request}/download', [ApiController::class, 'download'])->name('requests.download');
 });

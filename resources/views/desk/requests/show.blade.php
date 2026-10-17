@@ -55,6 +55,15 @@
         @if ($request->result['held'] ?? false)
             <p class="drd-alert drd-alert--warn">A legal hold on this person stopped the erasure.</p>
         @endif
+        @if (! empty($request->result['processors_to_tell']))
+            {{-- s.8(7)(b): the business must have its processors erase what it gave them. --}}
+            <p>Tell each of these processors to erase the data you gave them about this person (section 8(7)(b)):</p>
+            <ul>
+                @foreach ($request->result['processors_to_tell'] as $processor)
+                    <li><strong>{{ $processor['name'] }}</strong>: {{ implode(', ', $processor['data_shared']) }} ({{ implode(', ', $processor['purposes']) }})</li>
+                @endforeach
+            </ul>
+        @endif
         <pre class="drd-pre">{{ json_encode($request->result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
     @endif
 

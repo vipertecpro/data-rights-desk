@@ -12,12 +12,14 @@ final readonly class ErasureReport
 {
     /**
      * @param  array<string, ErasureOutcome>  $sources
+     * @param  list<array{name: string, kind: string, purposes: list<string>, data_shared: list<string>}>  $processors  s.8(7)(b): the processors that got data for these purposes, to be told to erase it
      */
     public function __construct(
         public ErasureReason $reason,
         public array $sources = [],
         public bool $held = false,
         public int $nominationsDeleted = 0,
+        public array $processors = [],
     ) {}
 
     public static function blockedByHold(ErasureReason $reason): self
@@ -63,6 +65,7 @@ final readonly class ErasureReport
             'retained' => $this->retainedCount(),
             'nominations_deleted' => $this->nominationsDeleted,
             'sources' => array_map(fn (ErasureOutcome $o): array => $o->toArray(), $this->sources),
+            'processors_to_tell' => $this->processors,
         ];
     }
 }

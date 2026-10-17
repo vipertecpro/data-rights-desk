@@ -21,6 +21,24 @@ it('writes a source stub to app/DataRights and refuses to overwrite it', functio
     File::deleteDirectory(app_path('DataRights'));
 });
 
+it('s.8(7)(a): make-source --purpose creates a PurposeEraser for those purposes, and refuses an unknown one', function () {
+    $path = app_path('DataRights/Newsletter.php');
+
+    try {
+        $this->artisan('data-rights:make-source', ['name' => 'Newsletter', '--purpose' => ['marketing']])->assertExitCode(0);
+
+        expect(File::get($path))->toContain('class Newsletter implements PurposeEraser')
+            ->toContain("return ['marketing'];")
+            ->toContain('eraseForPurpose');
+
+        $this->artisan('data-rights:make-source', ['name' => 'Other', '--purpose' => ['markting']])
+            ->expectsOutputToContain('Purpose [markting] is not in config/data-rights.php.')
+            ->assertExitCode(1);
+    } finally {
+        File::deleteDirectory(app_path('DataRights'));
+    }
+});
+
 it('prints the next steps after install', function () {
     try {
         $this->artisan('data-rights:install')

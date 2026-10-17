@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Vipertecpro\DataRightsDesk\Support\Morphs;
 
 return new class extends Migration
 {
@@ -10,12 +11,12 @@ return new class extends Migration
     {
         Schema::create('data_rights_subjects', function (Blueprint $table): void {
             $table->ulid('id')->primary();
-            $table->morphs('subject');
+            Morphs::add($table, 'subject');
             $table->string('age_status', 16)->nullable();
             $table->timestamp('age_declared_at')->nullable();
             // When staff changed the person's age answer, who did, and why (encrypted).
             $table->timestamp('age_changed_at')->nullable();
-            $table->nullableMorphs('age_changed_by');
+            Morphs::add($table, 'age_changed_by', nullable: true);
             $table->text('age_note')->nullable();
             $table->boolean('has_lawful_guardian')->default(false);
             $table->timestamp('last_seen_at')->nullable();

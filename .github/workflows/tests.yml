@@ -12,15 +12,18 @@ jobs:
     name: Pint and PHPStan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.5'
           coverage: none
 
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Security advisories
+        run: composer audit --no-interaction
 
       - name: Pint
         run: vendor/bin/pint --test
@@ -80,9 +83,9 @@ jobs:
       DB_PASSWORD: password
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           extensions: pdo_sqlite, pdo_mysql, pdo_pgsql
@@ -153,7 +156,7 @@ jobs:
       DB_PASSWORD: ${{ matrix.db == 'sqlsrv' && 'Drd-Test-Passw0rd' || 'password' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install the Microsoft ODBC driver for SQL Server
         if: matrix.db == 'sqlsrv'
@@ -167,7 +170,7 @@ jobs:
         if: matrix.db == 'sqlsrv'
         run: docker exec ${{ job.services.mssql.id }} /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P Drd-Test-Passw0rd -Q "CREATE DATABASE testing"
 
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           extensions: pdo_sqlite, pdo_mysql, sqlsrv, pdo_sqlsrv

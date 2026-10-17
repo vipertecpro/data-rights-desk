@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Vipertecpro\DataRightsDesk\DataRightsDeskServiceProvider;
 use Vipertecpro\DataRightsDesk\Enums\ConsentChannel;
+use Vipertecpro\DataRightsDesk\Enums\RequestType;
 use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\ConsentRecord;
 use Vipertecpro\DataRightsDesk\Tests\Support\User;
@@ -60,4 +61,39 @@ it('refuses a token client with no token or a wrong one, and keeps the notice pu
     $this->getJson('/data-rights/api/purposes')->assertUnauthorized();
     $this->withToken('wrong')->postJson('/data-rights/api/consents/marketing')->assertUnauthorized();
     $this->getJson('/data-rights/api/notice')->assertOk();
+});
+
+it('gives a sign-up screen the notice id and the consent purposes without sign-in', function () {
+    $notice = DataRights::notices()->current('en');
+
+    $this->getJson('/data-rights/api/notice')->assertOk()
+        ->assertJsonPath('id', $notice->getKey())
+        ->assertJsonPath('consent_purposes.0.key', 'account')
+        ->assertJsonPath('consent_purposes.1.key', 'marketing');
+});
+
+it('lets a token client download its completed access summary, even with the public pages off', function () {
+    config()->set('data-rights.routes.public.enabled', false);
+    useTokenApi($this);
+
+    $request = DataRights::requests()->open(RequestType::Access, $this->person, null, ['actor' => $this->person]);
+    DataRights::requests()->complete($request, 'Your summary is ready.');
+
+    $url = $this->withToken('phone-token')->getJson("/data-rights/api/requests/{$request->id}")
+        ->assertOk()
+        ->json('data.download_url');
+
+    expect($url)->toEndWith("/data-rights/api/requests/{$request->id}/download");
+
+    $this->withToken('phone-token')->getJson("/data-rights/api/requests/{$request->id}/download")
+        ->assertOk()
+        ->assertJsonPath('contact.email', 'privacy@shop.example');
+});
+
+it('limits consent changes to 30 a minute for each person', function () {
+    foreach (range(1, 30) as $i) {
+        $this->withToken('phone-token')->postJson('/data-rights/api/consents/marketing')->assertSuccessful();
+    }
+
+    $this->withToken('phone-token')->postJson('/data-rights/api/consents/marketing')->assertStatus(429);
 });

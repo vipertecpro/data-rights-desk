@@ -9,6 +9,7 @@ use Vipertecpro\DataRightsDesk\Facades\DataRights;
 use Vipertecpro\DataRightsDesk\Models\Notice;
 use Vipertecpro\DataRightsDesk\Tests\Support\AllowingParentVerifier;
 use Vipertecpro\DataRightsDesk\Tests\Support\NameOnlyPerson;
+use Vipertecpro\DataRightsDesk\Tests\Support\NewsletterSource;
 use Vipertecpro\DataRightsDesk\Tests\Support\UsersSource;
 
 function cleanSetup(): void
@@ -23,10 +24,17 @@ function cleanSetup(): void
         ],
     ]);
     config()->set('data-rights.board.url', 'https://board.example');
-    config()->set('data-rights.sources', [UsersSource::class]);
+    config()->set('data-rights.sources', [UsersSource::class, NewsletterSource::class]);
     app()->bind(ParentalConsentVerifier::class, AllowingParentVerifier::class);
     DataRights::notices()->publish();
 }
+
+it('Checker: s.8(7)(a) warns about a consent purpose that no PurposeEraser covers', function () {
+    cleanSetup();
+    config()->set('data-rights.sources', [UsersSource::class]);
+
+    expect(array_column(DataRights::check()->warnings(), 'code'))->toContain('withdrawal_not_erased');
+});
 
 it('Checker: a clean setup passes and the command exits 0', function () {
     cleanSetup();

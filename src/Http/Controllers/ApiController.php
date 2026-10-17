@@ -32,10 +32,20 @@ class ApiController
             return response()->json(['message' => 'The notice has not been published yet.'], 404);
         }
 
+        $purposes = [];
+
+        foreach ($this->dataRights->purposes()->consentBased() as $purpose) {
+            if (array_key_exists($purpose->key, (array) $notice->purposes)) {
+                $purposes[] = $purpose->toArray($notice->locale);
+            }
+        }
+
         return response()->json([
             ...$this->noticeMeta($notice),
             'markdown' => $notice->document(),
             'html' => $notice->html(),
+            // For a sign-up screen: post the ticked keys as data_rights[purposes][] with data_rights[notice] = id.
+            'consent_purposes' => $purposes,
             'languages' => $this->languages(),
         ]);
     }
@@ -111,6 +121,17 @@ class ApiController
         return response()->json(['data' => $this->requestData($request, true)]);
     }
 
+    /** s.11: the access summary, for token clients that cannot open the session-only page. */
+    public function download(Request $http, DataRightsRequest $request): JsonResponse
+    {
+        $subject = $this->subject($http);
+        $this->ensureOwn($request, $subject);
+
+        abort_unless($request->downloadable(), 404);
+
+        return response()->json($this->dataRights->requests()->accessSummary($subject));
+    }
+
     private function record(Request $request, string $key, bool $give): JsonResponse
     {
         $locale = $this->pageLocale($request);
@@ -171,7 +192,9 @@ class ApiController
         if ($full) {
             $data['details'] = $request->details;
             $data['response'] = $request->response;
-            $data['download_url'] = $request->downloadable() ? route('data-rights.requests.download', $request) : null;
+            $data['download_url'] = $request->downloadable() && Route::has('data-rights.api.requests.download')
+                ? route('data-rights.api.requests.download', $request)
+                : null;
         }
 
         return $data;
@@ -181,6 +204,7 @@ class ApiController
     private function noticeMeta(Notice $notice): array
     {
         return [
+            'id' => $notice->getKey(),
             'version' => $notice->version,
             'locale' => $notice->locale,
             'hash' => $notice->hash,

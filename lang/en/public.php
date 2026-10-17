@@ -158,5 +158,6 @@ return [
         'withdraw' => 'You can withdraw any of these later, as easily as you give it.',
         'no_notice' => 'The privacy notice is not published yet, so consent cannot be asked for.',
         'required' => 'Please give consent for this use to continue.',
+        'age_required' => 'Please say whether you are 18 or older.',
     ],
 ];

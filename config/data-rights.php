@@ -45,6 +45,10 @@ return [
     'subject_model' => env('DATA_RIGHTS_SUBJECT_MODEL', 'App\\Models\\User'),
     'subject_email_column' => 'email',
 
+    // The id type of the package's columns that point at a person: null (Laravel's default),
+    // 'int', 'uuid' or 'ulid'. Set it before you migrate if your user ids are UUIDs or ULIDs.
+    'morph_key_type' => null,
+
     /*
     | Purposes: key => definition. Text fields take a string (default locale) or
     | ['en' => '...', 'hi' => '...']. 'data' takes a list or ['en' => [...], 'hi' => [...]].
@@ -172,7 +176,8 @@ return [
     ],
 
     'routes' => [
-        'public' => ['enabled' => true, 'prefix' => 'data-rights', 'middleware' => ['web']],
+        // 'auth' guards the signed-in pages (consents, requests); use 'auth:customer' for another guard.
+        'public' => ['enabled' => true, 'prefix' => 'data-rights', 'middleware' => ['web'], 'auth' => 'auth'],
         'dashboard' => ['enabled' => true, 'prefix' => 'data-rights-desk', 'middleware' => ['web', 'auth']],
         // JSON for apps with their own screens, under "{public prefix}/api". The defaults use the
         // browser session (Blade, Livewire, Inertia on the same site). For token clients such as
