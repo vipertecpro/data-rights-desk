@@ -1,10 +1,12 @@
 <?php
 
-// The Hindi text is written and waits for review by a fluent speaker, so the status stays "needs_review".
-// See docs/translations.md for the strings to check.
+// Drafted with AI from the English text, using the legal terms of the Hindi text of the DPDP Rules
+// in the Gazette of India. No fluent reader has checked it yet, so the status stays "needs_review".
+// See docs/translations.md for the points to check.
 
 return [
     'status' => 'needs_review',
+    'source' => 'ai-draft',
     'name' => 'हिन्दी',
     'english_name' => 'Hindi',
     'direction' => 'ltr',

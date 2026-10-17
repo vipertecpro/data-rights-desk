@@ -62,8 +62,9 @@ it('s.5(3): every offerable language keeps each :placeholder of the English stri
             preg_match_all('/:[a-z_]+/', $text, $expected);
             preg_match_all('/:[a-z_]+/', drdLangStrings($locale, $file)[$key] ?? '', $actual);
 
-            $want = $expected[0];
-            $got = $actual[0];
+            // A placeholder may appear twice in a translation (Laravel fills in every copy), but never go missing.
+            $want = array_values(array_unique($expected[0]));
+            $got = array_values(array_unique($actual[0]));
             sort($want);
             sort($got);
 

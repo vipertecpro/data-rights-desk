@@ -13,6 +13,6 @@ it('Rule 14(1): the rights page shows how to ask and the identifier needed, with
     config()->set('data-rights.board.url', 'https://board.example');
 
     $this->get('/data-rights')->assertSee('Please give your customer number')
-        ->assertSee('<a href="https://board.example">https://board.example</a>', false);
+        ->assertSee('<a href="https://board.example" dir="ltr">https://board.example</a>', false);
     $this->get('/data-rights?lang=hi')->assertSee('[hi] your customer number');
 });

@@ -33,9 +33,9 @@ it('keeps processing records for at least keep_days from the processing', functi
 it('reads language status from meta.php and treats a missing one as needed', function () {
     expect(Languages::status('en'))->toBe(LanguageStatus::Ready)
         ->and(Languages::status('hi'))->toBe(LanguageStatus::NeedsReview)
-        ->and(Languages::status('ta'))->toBe(LanguageStatus::Needed)
+        ->and(Languages::status('fr'))->toBe(LanguageStatus::Needed)
         ->and(Languages::nativeName('hi'))->toBe('हिन्दी')
-        ->and(Languages::resolve('ta', 'hi'))->toBe('hi')
+        ->and(Languages::resolve('fr', 'hi'))->toBe('hi')
         ->and(Languages::resolve(null, 'xx'))->toBe('en');
 });
 

@@ -14,7 +14,10 @@ final class Html
     {
         $token = '%%DRD-LINK%%';
         $text = e((string) __($key, [...$replace, 'url' => $token]));
-        $link = '<a href="'.e($url).'">'.e($label ?? $url).'</a>';
+        // A bare web address is always read left to right, also inside Urdu, Kashmiri or Sindhi text.
+        $link = $label === null
+            ? '<a href="'.e($url).'" dir="ltr">'.e($url).'</a>'
+            : '<a href="'.e($url).'">'.e($label).'</a>';
 
         return new HtmlString(str_replace($token, $link, $text));
     }

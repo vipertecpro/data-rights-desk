@@ -26,13 +26,13 @@ it('s.5(3): the notice and the consent page are offered in each offered locale',
 });
 
 it('s.5(3): a locale whose language status is needed cannot be offered or published', function () {
-    config()->set('data-rights.locales', ['en', 'hi', 'ta']);
+    config()->set('data-rights.locales', ['en', 'hi', 'fr']);
 
     expect(DataRights::notices()->offeredLocales())->toBe(['en', 'hi'])
         ->and(fn () => DataRights::notices()->publish())->toThrow(NoticeIncomplete::class);
 
     $this->artisan('data-rights:notice')
-        ->expectsOutputToContain('ta: the package text has no translation yet')
+        ->expectsOutputToContain('fr: the package text has no translation yet')
         ->assertExitCode(1);
 
     $this->get('/data-rights/notice?lang=ta')->assertOk()->assertSee('<html lang="en"', false);

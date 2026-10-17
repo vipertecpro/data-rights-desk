@@ -75,7 +75,7 @@ it('Checker: errors for missing contact, missing or stale notice, needed locale,
         expect($report->hasError($code))->toBeTrue($code);
     }
 
-    config()->set('data-rights.locales', ['en', 'hi', 'ta']);
+    config()->set('data-rights.locales', ['en', 'hi', 'fr']);
     expect(DataRights::check()->hasError('locale_needed'))->toBeTrue();
 
     Notice::query()->delete();
