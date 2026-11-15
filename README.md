@@ -548,7 +548,7 @@ composer ci        # Pint check, PHPStan, Pest, and Pest again with immutable da
 
 Every duty has at least one test, and the test name starts with the section or rule it covers, for example `Rule 7(2):` or `s.6(10):`. The `docs/rules.md` file included in the package maps each feature to its section or rule, with a short quote from the gazette text. It also marks what could not be verified.
 
-The repository has a GitHub Actions file for PHP 8.3, 8.4 and 8.5 with Laravel 12 and 13 on SQLite, MySQL 8 and PostgreSQL 16, plus MariaDB 11 and SQL Server 2022 on PHP 8.4.
+The repository has a GitHub Actions file for PHP 8.3, 8.4 and 8.5 with Laravel 12 and 13 on SQLite, MySQL 8.4 and PostgreSQL 18, plus MariaDB 11 and SQL Server 2022 on PHP 8.4.
 
 ## Using it alongside GDPR and other laws
 
